@@ -154,10 +154,7 @@ Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura (no 
         {
           googleSearch: {}
         }
-      ],
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
+      ]
     };
 
     try {
@@ -171,8 +168,15 @@ Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura (no 
 
       if (response.ok) {
         const result = await response.json();
-        const textResponse = result.candidates[0].content.parts[0].text;
-        return JSON.parse(textResponse.trim());
+        let textResponse = result.candidates[0].content.parts[0].text;
+        
+        // Limpiar bloques de código markdown si los hay
+        textResponse = textResponse
+          .replace(/```json/g, '')
+          .replace(/```/g, '')
+          .trim();
+          
+        return JSON.parse(textResponse);
       } else {
         const errorText = await response.text();
         console.error('❌ Error de API en Gemini Search Grounding:', response.status, errorText);
