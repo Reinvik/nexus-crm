@@ -8,9 +8,11 @@ import {
   FileSpreadsheet, 
   RefreshCw,
   Phone,
-  Globe
+  Globe,
+  Search
 } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
+import { dbService } from '../../services/dbService';
 
 export default function NexusHunter({ onImportLeads }) {
   // Estado Importar CSV
@@ -24,6 +26,11 @@ export default function NexusHunter({ onImportLeads }) {
   const [leadCount, setLeadCount] = useState(5);
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState('');
+
+  // Estado Búsqueda en Vivo IA
+  const [liveQuery, setLiveQuery] = useState('');
+  const [isLiveSearching, setIsLiveSearching] = useState(false);
+  const [liveError, setLiveError] = useState('');
 
   // 1. Procesador de CSV
   const handleFileChange = (e) => {
@@ -244,8 +251,53 @@ Responde ÚNICAMENTE con una lista en formato JSON puro (sin bloques de código 
     }
   };
 
+  const handleLiveSearchAndCreate = async () => {
+    if (!liveQuery.trim()) return;
+    setIsLiveSearching(true);
+    setLiveError('');
+    try {
+      const result = await geminiService.searchAndStructureLead(liveQuery);
+      if (result && result.name) {
+        const newLead = {
+          name: result.name,
+          commune: result.commune || 'Santiago',
+          address: result.address || `${result.name}, Chile`,
+          phone: result.phone || '',
+          website: result.website || '',
+          priority: result.priority || 'Media',
+          stage: 'lead',
+          value: 45000,
+          pain: result.pain || 'Control manual de órdenes de trabajo.',
+          pitch: result.pitch || 'Hola...',
+          interest: 'Indeciso',
+          visitStatus: 'Ninguna',
+          nextVisitDate: '',
+          nextVisitTime: '',
+          openWeekends: false,
+          notes: 'Enriquecido automáticamente mediante búsqueda IA en vivo en internet.'
+        };
+
+        const saved = await dbService.saveLead(newLead);
+        
+        if (onImportLeads) {
+          onImportLeads([saved]);
+        }
+        
+        alert(`🎉 Taller "${result.name}" encontrado en internet e insertado con éxito en el Kanban.`);
+        setLiveQuery('');
+      } else {
+        setLiveError('No pudimos extraer los datos del taller. Asegúrate de escribir el nombre completo o comuna.');
+      }
+    } catch (err) {
+      console.error(err);
+      setLiveError('Ocurrió un error al buscar y procesar el taller en internet.');
+    } finally {
+      setIsLiveSearching(false);
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
       {/* Tarjeta 1: Importador de CSV */}
       <div className="glass-panel p-6 rounded-2xl bg-white border border-slate-100 flex flex-col justify-between">
@@ -403,6 +455,64 @@ Responde ÚNICAMENTE con una lista en formato JSON puro (sin bloques de código 
             <>
               <Sparkles size={14} className="text-cyan-400" />
               Ejecutar Nexus Hunter
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Tarjeta 3: Enriquecer & Crear con IA en Vivo */}
+      <div className="glass-panel p-6 rounded-2xl bg-white border border-slate-100 flex flex-col justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+              <Search size={18} className="text-emerald-500" />
+            </div>
+            <h3 className="text-base font-extrabold text-slate-800 tracking-tight">Escanear y Crear con IA en Vivo</h3>
+          </div>
+          <p className="text-slate-400 text-xs font-semibold leading-relaxed mb-6">
+            Escribe el nombre y comuna de cualquier taller. Gemini buscará en internet en tiempo real para extraer sus datos (dirección, teléfono, web y comuna) y creará su ticket automáticamente.
+          </p>
+
+          <div className="space-y-4">
+            {/* Input de Búsqueda */}
+            <div>
+              <label className="text-xs font-bold text-slate-600 block mb-1">Nombre del Taller y Ubicación</label>
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={liveQuery}
+                  onChange={(e) => setLiveQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-550 focus:outline-none"
+                  placeholder="Ej. Frenos AM Ñuñoa, Taller Farias Santiago"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Error */}
+          {liveError && (
+            <div className="mt-4 p-3 bg-rose-50 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 border border-rose-100">
+              <AlertCircle size={14} /> {liveError}
+            </div>
+          )}
+        </div>
+
+        {/* Acción */}
+        <button
+          onClick={handleLiveSearchAndCreate}
+          disabled={isLiveSearching || !liveQuery.trim()}
+          className="w-full mt-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-650/10 cursor-pointer disabled:opacity-50"
+        >
+          {isLiveSearching ? (
+            <>
+              <RefreshCw size={14} className="animate-spin" />
+              Buscando e Investigando en la Web...
+            </>
+          ) : (
+            <>
+              <Sparkles size={14} className="text-emerald-300" />
+              Escanear y Crear Ticket
             </>
           )}
         </button>

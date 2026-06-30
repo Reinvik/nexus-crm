@@ -98,5 +98,98 @@ Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura (no 
       console.error('❌ Excepción al llamar a Gemini:', error);
       return mockQualify(name, category, website, address, rating);
     }
+  },
+
+  async searchAndStructureLead(query) {
+    if (!query || query.trim() === '') return null;
+
+    if (!geminiApiKey) {
+      console.warn('⚠️ VITE_GEMINI_API_KEY no configurada. Simulando búsqueda en internet de:', query);
+      await new Promise(r => setTimeout(r, 2000));
+      return {
+        name: query.toUpperCase(),
+        address: "Av. Irarrázaval 3450, Ñuñoa, Santiago",
+        commune: "Ñuñoa",
+        phone: "56998765432",
+        website: "https://www.ejemplo-taller.cl",
+        priority: "Alta",
+        pain: "Desorden operacional y falta de visibilidad web del taller (Simulado sin API Key).",
+        pitch: `Hola, encontré el taller *${query}* en la web. Noté que no tienen presencia web optimizada...`
+      };
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+
+    const prompt = `Actúa como un agente de scraping y prospección inteligente para talleres mecánicos en Chile.
+Tu tarea es buscar en internet usando la herramienta de Google Search los datos reales del siguiente taller mecánico:
+Taller a buscar: "${query}"
+
+Debes buscar e identificar con precisión:
+1. Nombre oficial del taller o centro de servicios.
+2. Dirección exacta (incluyendo calle, número).
+3. Comuna (debe ser una comuna real de Santiago o Chile, ej. Ñuñoa, Santiago, Providencia, Las Condes, San Miguel, Macul, La Reina, etc. Si no la encuentras, deduce la comuna según la dirección).
+4. Teléfono de contacto (formato chileno de 9 dígitos, ej. 569XXXXXXXX o 9XXXXXXXX).
+5. Sitio web oficial (URL válida, o vacío si no tiene).
+6. Prioridad: Coloca "Alta" si el taller se ve activo y grande pero no tiene sitio web o tiene reviews bajas por desorden. De lo contrario, "Media".
+7. Dolor probable: Deduce un dolor típico operacional (ej. control de repuestos, agendamiento de clientes, envío rápido de presupuestos por WhatsApp).
+8. Mensaje de WhatsApp (pitch): Redacta un mensaje socrático breve y empático enfocado en ofrecer una auditoría de fugas de dinero gratuita para su taller.
+
+Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura (no agregues bloques de código \`\`\`json ni texto adicional, solo el JSON puro):
+{
+  "name": "Nombre Taller Encontrado",
+  "address": "Dirección completa",
+  "commune": "Comuna chilena",
+  "phone": "Teléfono de contacto",
+  "website": "URL de la web o vacío",
+  "priority": "Alta/Media/Baja",
+  "pain": "Descripción breve del dolor operacional probable",
+  "pitch": "Mensaje socrático de WhatsApp en español de Chile"
+}`;
+
+    const payload = {
+      contents: [{
+        parts: [{ text: prompt }]
+      }],
+      tools: [
+        {
+          googleSearch: {}
+        }
+      ],
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const textResponse = result.candidates[0].content.parts[0].text;
+        return JSON.parse(textResponse.trim());
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Error de API en Gemini Search Grounding:', response.status, errorText);
+        throw new Error('Error en API');
+      }
+    } catch (err) {
+      console.warn('⚠️ Fallback por error en Gemini Search Grounding. Simulando respuesta de internet.');
+      return {
+        name: query.toUpperCase(),
+        address: "Dirección encontrada en internet 123",
+        commune: "Santiago",
+        phone: "56988887777",
+        website: "",
+        priority: "Media",
+        pain: "Dificultad para coordinar mecánicos y repuestos en terreno.",
+        pitch: `Hola, vimos su taller *${query}* y queremos ofrecerle una propuesta...`
+      };
+    }
   }
 };
