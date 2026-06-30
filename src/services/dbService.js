@@ -310,6 +310,34 @@ if (!localStorage.getItem(LOCAL_ACTIVITIES_KEY)) {
   localStorage.setItem(LOCAL_ACTIVITIES_KEY, JSON.stringify([]));
 }
 
+const mapDbToLead = (dbLead) => {
+  if (!dbLead) return null;
+  return {
+    id: dbLead.id,
+    name: dbLead.name,
+    commune: dbLead.commune,
+    address: dbLead.address,
+    phone: dbLead.phone,
+    website: dbLead.website,
+    email: dbLead.email,
+    emailType: dbLead.email_type || dbLead.emailType || 'No tiene',
+    priority: dbLead.priority,
+    stage: dbLead.stage,
+    pain: dbLead.pain,
+    pitch: dbLead.pitch,
+    value: dbLead.value,
+    lastVisited: dbLead.last_visited || dbLead.lastVisited || '',
+    visitStatus: dbLead.visit_status || dbLead.visitStatus || 'Ninguna',
+    interest: dbLead.interest,
+    nextVisitDate: dbLead.next_visit_date || dbLead.nextVisitDate || '',
+    nextVisitTime: dbLead.next_visit_time || dbLead.nextVisitTime || '',
+    notes: dbLead.notes,
+    buyerPersona: dbLead.buyer_persona || dbLead.buyerPersona || '',
+    openWeekends: dbLead.open_weekends !== undefined ? dbLead.open_weekends : (dbLead.openWeekends || false),
+    updatedAt: dbLead.updated_at || dbLead.updatedAt
+  };
+};
+
 export const dbService = {
   // === GESTIÓN DE LEADS (PROSPECTOS) ===
   async getLeads() {
@@ -319,13 +347,13 @@ export const dbService = {
           .from('crm_leads')
           .select('*')
           .order('created_at', { ascending: false });
-        if (!error) return data;
+        if (!error) return data.map(mapDbToLead);
         console.warn('Fallback a localStorage debido a error en Supabase:', error);
       } catch (err) {
         console.warn('Fallback a localStorage por excepción:', err);
       }
     }
-    return JSON.parse(localStorage.getItem(LOCAL_LEADS_KEY) || '[]');
+    return JSON.parse(localStorage.getItem(LOCAL_LEADS_KEY) || '[]').map(mapDbToLead);
   },
 
   async saveLead(lead) {
@@ -333,6 +361,7 @@ export const dbService = {
     const finalLead = {
       ...lead,
       id: lead.id || `lead-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      openWeekends: lead.openWeekends || false,
       updatedAt: new Date().toISOString()
     };
 
@@ -360,11 +389,13 @@ export const dbService = {
             next_visit_date: finalLead.nextVisitDate,
             next_visit_time: finalLead.nextVisitTime,
             notes: finalLead.notes,
+            buyer_persona: finalLead.buyerPersona,
+            open_weekends: finalLead.openWeekends,
             updated_at: finalLead.updatedAt
           })
           .select();
 
-        if (!error) return data[0];
+        if (!error) return mapDbToLead(data[0]);
         console.warn('Fallback a localStorage por error en Supabase upsert:', error);
       } catch (err) {
         console.warn('Fallback a localStorage por excepción en Supabase upsert:', err);
@@ -372,7 +403,7 @@ export const dbService = {
     }
 
     // Guardar en localStorage
-    const leads = JSON.parse(localStorage.getItem(LOCAL_LEADS_KEY) || '[]');
+    const leads = JSON.parse(localStorage.getItem(LOCAL_LEADS_KEY) || '[]').map(mapDbToLead);
     if (isNew) {
       leads.push(finalLead);
     } else {

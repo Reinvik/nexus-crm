@@ -42,6 +42,7 @@ export default function LeadModal({ lead, onClose, onSaveLead, onDeleteLead }) {
   const [nextVisitTime, setNextVisitTime] = useState('');
   const [notes, setNotes] = useState('');
   const [buyerPersona, setBuyerPersona] = useState('');
+  const [openWeekends, setOpenWeekends] = useState(false);
 
   // Actividades
   const [activities, setActivities] = useState([]);
@@ -72,6 +73,7 @@ export default function LeadModal({ lead, onClose, onSaveLead, onDeleteLead }) {
       setNextVisitTime(lead.nextVisitTime || '');
       setNotes(lead.notes || '');
       setBuyerPersona(lead.buyerPersona || '');
+      setOpenWeekends(lead.openWeekends || false);
 
       // Cargar Actividades
       loadActivities();
@@ -110,7 +112,8 @@ export default function LeadModal({ lead, onClose, onSaveLead, onDeleteLead }) {
       nextVisitDate,
       nextVisitTime,
       notes,
-      buyerPersona
+      buyerPersona,
+      openWeekends
     };
     
     onSaveLead(updatedLead);
@@ -582,6 +585,20 @@ export default function LeadModal({ lead, onClose, onSaveLead, onDeleteLead }) {
 
             <div className="border-t border-slate-200/80 my-2 pt-3 space-y-4">
               <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">Planificación de Actividades</h4>
+
+              {/* Horario Fines de Semana */}
+              <div className="flex items-center gap-2 py-2.5 px-3 bg-slate-550/5 border border-slate-200/50 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="openWeekends"
+                  checked={openWeekends}
+                  onChange={(e) => setOpenWeekends(e.target.checked)}
+                  className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-slate-350 cursor-pointer"
+                />
+                <label htmlFor="openWeekends" className="text-xs font-black text-slate-700 cursor-pointer select-none">
+                  Abre Fines de Semana (Sáb/Dom)
+                </label>
+              </div>
 
               {/* Visita Realizada */}
               <div>

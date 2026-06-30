@@ -29,6 +29,7 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
   const [communeFilter, setCommuneFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [webFilter, setWebFilter] = useState('all');
+  const [weekendFilter, setWeekendFilter] = useState('all');
 
   // Drag & Drop State
   const [draggedId, setDraggedId] = useState(null);
@@ -50,7 +51,11 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
                        (webFilter === 'no_web' && hasNoWeb) || 
                        (webFilter === 'has_web' && !hasNoWeb);
 
-    return matchesSearch && matchesCommune && matchesPriority && matchesWeb;
+    const matchesWeekend = weekendFilter === 'all' || 
+                           (weekendFilter === 'open_weekends' && lead.openWeekends) ||
+                           (weekendFilter === 'closed_weekends' && !lead.openWeekends);
+
+    return matchesSearch && matchesCommune && matchesPriority && matchesWeb && matchesWeekend;
   });
 
   // Funciones de Drag & Drop nativo
@@ -147,6 +152,17 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
             <option value="has_web">Con Sitio Web</option>
           </select>
 
+          {/* Fines de Semana */}
+          <select
+            value={weekendFilter}
+            onChange={(e) => setWeekendFilter(e.target.value)}
+            className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold text-slate-600"
+          >
+            <option value="all">Horario (Cualquiera)</option>
+            <option value="open_weekends">Abre Fines de Semana</option>
+            <option value="closed_weekends">Cerrado Fines de Semana</option>
+          </select>
+
           {/* Botón Nuevo Lead */}
           <button
             onClick={onAddNewLead}
@@ -206,9 +222,16 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
                     >
                       {/* Badge Comuna + Enlace Maps */}
                       <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full border border-slate-200/50">
-                          {lead.commune}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[9px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full border border-slate-200/50">
+                            {lead.commune}
+                          </span>
+                          {lead.openWeekends && (
+                            <span className="text-[8px] font-black px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200/30 select-none">
+                              Sáb/Dom
+                            </span>
+                          )}
+                        </div>
                         <a
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lead.name}, ${lead.commune}, Chile`)}`}
                           target="_blank"
