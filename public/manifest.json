@@ -1,0 +1,18 @@
+{
+  "short_name": "Nexus CRM",
+  "name": "Nexus CRM - SmartLean",
+  "description": "CRM Inteligente de SmartLean Chile para Talleres Mecánicos.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#070b19",
+  "theme_color": "#070b19",
+  "display": "standalone",
+  "orientation": "portrait"
+}
