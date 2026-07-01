@@ -173,6 +173,16 @@ export default function MentorshipPlaybook() {
           <Target size={14} />
           Dolores vs Soluciones
         </button>
+        <button
+          onClick={() => setActiveTab('aptitude-disqualification')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer border flex items-center gap-1.5 whitespace-nowrap
+            ${activeTab === 'aptitude-disqualification' 
+              ? 'bg-cyan-500 border-cyan-500 text-white shadow-lg shadow-cyan-500/15' 
+              : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'}`}
+        >
+          <Target size={14} className="text-amber-500 animate-pulse" />
+          Aptitud & Descarte (Sara Alonso)
+        </button>
       </div>
 
       {/* Pestaña 1: Flujo de Venta Socrático */}
@@ -716,6 +726,134 @@ export default function MentorshipPlaybook() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Pestaña 6: Calificación de Aptitud & Estrategia de Descarte (Sara Alonso) */}
+      {activeTab === 'aptitude-disqualification' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Introducción a la Metodología */}
+            <div className="glass-panel p-6 rounded-2xl bg-white border border-slate-100 shadow-sm space-y-4">
+              <div className="flex items-center gap-2 text-amber-600">
+                <Target size={18} className="text-amber-500 animate-pulse" />
+                <h3 className="text-sm font-black uppercase tracking-wider">Estrategia de Calificación por Descarte B2B</h3>
+              </div>
+              <p className="text-xs text-slate-650 leading-relaxed font-semibold">
+                Siguiendo el enfoque de la consultoría de ventas de alto valor (como Sara Alonso), un buen auditor no ruega por la venta. Al contrario, <strong>evalúa si el cliente es apto</strong> para usar la solución. Si el cliente no tiene el compromiso de cambiar o es extremadamente desordenado, es mejor descalificarlo. Esto no solo te evita un cliente problemático (alto churn), sino que genera un efecto de <strong>psicología inversa</strong> en el dueño, quien querrá "calificar" para comprar tu solución.
+              </p>
+              
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-3">
+                <span className="text-[11px] font-black text-slate-700 uppercase block tracking-wider">Los 3 Criterios de Aptitud Operativa:</span>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-xs font-extrabold text-slate-800 block">1. Compromiso con el Orden</span>
+                    <p className="text-[10px] text-slate-550 leading-normal">
+                      ¿El dueño está dispuesto a dedicar 3 minutos diarios para registrar el pañol y auditar el stock o prefiere seguir improvisando?
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-extrabold text-slate-800 block">2. Digitalización Mental</span>
+                    <p className="text-[10px] text-slate-550 leading-normal">
+                      ¿Está dispuesto a dejar el papel y abrir un smartphone o computador para revisar sus KPIs o se resiste al uso mínimo de tecnología?
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-extrabold text-slate-800 block">3. Liderazgo de Implementación</span>
+                    <p className="text-[10px] text-slate-550 leading-normal">
+                      ¿Tiene el carácter para guiar y exigirle a sus mecánicos que usen la app del pañol, o le tiene miedo a los reclamos del equipo?
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pauta y Guiones Socráticos de Descarte */}
+            <div className="glass-panel p-6 rounded-2xl bg-white border border-slate-100/80 shadow-sm space-y-4">
+              <div className="flex items-center gap-1.5 text-slate-800 font-extrabold text-xs">
+                <BookOpen size={16} className="text-cyan-500 font-extrabold" />
+                <span className="uppercase tracking-wider">Guiones y Pautas de Calificación por Descarte</span>
+              </div>
+
+              <div className="space-y-4">
+                
+                {/* Guión 1 */}
+                <div className="p-4 bg-amber-500/5 rounded-xl border border-amber-500/10 space-y-2 relative">
+                  <span className="text-[10px] font-black text-amber-800 uppercase block">Paso 1: La Advertencia Socrática (Descalificación Inicial)</span>
+                  <p className="text-xs text-slate-700 italic font-semibold leading-relaxed">
+                    "Mire don Marcelo, nuestro software Nexus Garage es excelente y frena el 100% de las pérdidas en repuestos, pero requiere un cambio: sus maestros deben marcar la entrada y salida de bodega en la Tablet. Si usted no está dispuesto a exigir este orden mínimo, no nos contrate. Esto no es para todos los talleres. ¿Usted cree que está listo para comprometerse a este cambio operativo, o prefiere seguir con sus fugas actuales?"
+                  </p>
+                  <button
+                    onClick={() => handleCopy("Mire don Marcelo, nuestro software Nexus Garage es excelente y frena el 100% de las pérdidas en repuestos, pero requiere un cambio: sus maestros deben marcar la entrada y salida de bodega en la Tablet. Si usted no está dispuesto a exigir este orden mínimo, no nos contrate. Esto no es para todos los talleres. ¿Usted cree que está listo para comprometerse a este cambio operativo, o prefiere seguir con sus fugas actuales?", 100)}
+                    className="absolute top-2 right-2 px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-750 rounded-lg text-[9px] font-black border border-slate-200 cursor-pointer shadow-sm"
+                  >
+                    {copiedIndex === 100 ? 'Copiado!' : 'Copiar'}
+                  </button>
+                </div>
+
+                {/* Guión 2 */}
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-150 space-y-2 relative">
+                  <span className="text-[10px] font-black text-slate-700 uppercase block">Paso 2: La Prueba de Aptitud en la Demo</span>
+                  <p className="text-xs text-slate-700 italic font-semibold leading-relaxed">
+                    "Generalmente no le vendemos el software a talleres donde los mecánicos manejan el negocio en lugar del dueño. Le pregunto derechamente: si su maestro más antiguo le dice que no quiere usar la app porque prefiere el cuaderno, ¿usted lo va a obligar a ordenarse, o va a dejar que la bodega siga con mermas de $200.000?"
+                  </p>
+                  <button
+                    onClick={() => handleCopy("Generalmente no le vendemos el software a talleres donde los mecánicos manejan el negocio en lugar del dueño. Le pregunto derechamente: si su maestro más antiguo le dice que no quiere usar la app porque prefiere el cuaderno, ¿usted lo va a obligar a ordenarse, o va a dejar que la bodega siga con mermas de $200.000?", 101)}
+                    className="absolute top-2 right-2 px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-755 rounded-lg text-[9px] font-black border border-slate-200 cursor-pointer shadow-sm"
+                  >
+                    {copiedIndex === 101 ? 'Copiado!' : 'Copiar'}
+                  </button>
+                </div>
+
+                {/* Guión 3 */}
+                <div className="p-4 bg-rose-500/5 rounded-xl border border-rose-500/10 space-y-2 relative">
+                  <span className="text-[10px] font-black text-rose-800 uppercase block">Paso 3: El Cierre de Descarte Final (FOMO)</span>
+                  <p className="text-xs text-slate-700 italic font-semibold leading-relaxed">
+                    "Prefiero serle honesto: si el taller no está listo para digitalizar la recepción, no me sirve que nos pague la mensualidad si a los dos meses va a abandonar el software por falta de uso. Prefiero que sigamos como amigos y nos avise cuando esté listo para liderar este cambio en su taller. ¿Qué opina, lo hacemos en serio ahora, o lo dejamos para el próximo año?"
+                  </p>
+                  <button
+                    onClick={() => handleCopy("Prefiero serle honesto: si el taller no está listo para digitalizar la recepción, no me sirve que nos pague la mensualidad si a los dos meses va a abandonar el software por falta de uso. Prefiero que sigamos como amigos y nos avise cuando esté listo para liderar este cambio en su taller. ¿Qué opina, lo hacemos en serio ahora, o lo dejamos para el próximo año?", 102)}
+                    className="absolute top-2 right-2 px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-755 rounded-lg text-[9px] font-black border border-slate-200 cursor-pointer shadow-sm"
+                  >
+                    {copiedIndex === 102 ? 'Copiado!' : 'Copiar'}
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          {/* Tarjeta de Resumen Psicológico de Descarte */}
+          <div className="glass-panel p-6 rounded-2xl bg-[#090e1f] border border-amber-500/20 text-white flex flex-col justify-between shadow-xl relative overflow-hidden h-fit">
+            <div className="absolute inset-0 z-0 pointer-events-none">
+              <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-amber-600/10 rounded-full mix-blend-screen filter blur-3xl"></div>
+            </div>
+
+            <div className="relative z-10 space-y-4">
+              <div className="flex items-center gap-1.5 text-amber-500 font-extrabold text-[10px] bg-amber-500/10 px-2 py-0.5 rounded-full w-max border border-amber-500/25">
+                <Target size={10} />
+                <span>La Psicología del No es para Todos</span>
+              </div>
+              
+              <div className="space-y-4 text-xs font-semibold text-slate-400">
+                <div className="space-y-1">
+                  <span className="text-slate-200 block font-bold text-[11px] uppercase tracking-wider text-amber-400">El Efecto Magneto:</span>
+                  <p className="text-[11px] text-slate-350 leading-relaxed font-medium">
+                    Cuando le dices a un cliente que quizás no califica para tu servicio, su ego B2B se activa. En lugar de justificar por qué es muy caro, empieza a justificar por qué <strong>su taller sí está ordenado y sí es apto</strong> para comprarte.
+                  </p>
+                </div>
+
+                <div className="space-y-1 pt-3 border-t border-slate-800">
+                  <span className="text-slate-200 block font-bold text-[11px] uppercase tracking-wider text-cyan-400">Filtrado Anti-Churn:</span>
+                  <p className="text-[11px] text-slate-350 leading-relaxed font-medium">
+                    Un cliente de baja aptitud que no quiere usar el sistema consumirá el 80% de tus horas de soporte, se quejará de todo y abandonará el software en 60 días. La venta por descarte protege tu tiempo y el ROI del equipo.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

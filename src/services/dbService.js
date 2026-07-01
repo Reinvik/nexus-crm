@@ -334,6 +334,9 @@ const mapDbToLead = (dbLead) => {
     notes: dbLead.notes,
     buyerPersona: dbLead.buyer_persona || dbLead.buyerPersona || '',
     openWeekends: dbLead.open_weekends !== undefined ? dbLead.open_weekends : (dbLead.openWeekends || false),
+    aptitudeCommitment: dbLead.aptitude_commitment !== undefined ? dbLead.aptitude_commitment : (dbLead.aptitudeCommitment || 3),
+    aptitudeDigital: dbLead.aptitude_digital !== undefined ? dbLead.aptitude_digital : (dbLead.aptitudeDigital || 3),
+    aptitudeLeadership: dbLead.aptitude_leadership !== undefined ? dbLead.aptitude_leadership : (dbLead.aptitudeLeadership || 3),
     updatedAt: dbLead.updated_at || dbLead.updatedAt
   };
 };
@@ -362,6 +365,9 @@ export const dbService = {
       ...lead,
       id: lead.id || `lead-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       openWeekends: lead.openWeekends || false,
+      aptitudeCommitment: lead.aptitudeCommitment !== undefined ? Number(lead.aptitudeCommitment) : 3,
+      aptitudeDigital: lead.aptitudeDigital !== undefined ? Number(lead.aptitudeDigital) : 3,
+      aptitudeLeadership: lead.aptitudeLeadership !== undefined ? Number(lead.aptitudeLeadership) : 3,
       updatedAt: new Date().toISOString()
     };
 
@@ -391,6 +397,9 @@ export const dbService = {
             notes: finalLead.notes,
             buyer_persona: finalLead.buyerPersona,
             open_weekends: finalLead.openWeekends,
+            aptitude_commitment: finalLead.aptitudeCommitment,
+            aptitude_digital: finalLead.aptitudeDigital,
+            aptitude_leadership: finalLead.aptitudeLeadership,
             updated_at: finalLead.updatedAt
           })
           .select();

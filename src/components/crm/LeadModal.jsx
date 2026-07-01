@@ -43,6 +43,9 @@ export default function LeadModal({ lead, onClose, onSaveLead, onDeleteLead }) {
   const [notes, setNotes] = useState('');
   const [buyerPersona, setBuyerPersona] = useState('');
   const [openWeekends, setOpenWeekends] = useState(false);
+  const [aptitudeCommitment, setAptitudeCommitment] = useState(3);
+  const [aptitudeDigital, setAptitudeDigital] = useState(3);
+  const [aptitudeLeadership, setAptitudeLeadership] = useState(3);
 
   // Actividades
   const [activities, setActivities] = useState([]);
@@ -74,6 +77,9 @@ export default function LeadModal({ lead, onClose, onSaveLead, onDeleteLead }) {
       setNotes(lead.notes || '');
       setBuyerPersona(lead.buyerPersona || '');
       setOpenWeekends(lead.openWeekends || false);
+      setAptitudeCommitment(lead.aptitudeCommitment !== undefined ? lead.aptitudeCommitment : 3);
+      setAptitudeDigital(lead.aptitudeDigital !== undefined ? lead.aptitudeDigital : 3);
+      setAptitudeLeadership(lead.aptitudeLeadership !== undefined ? lead.aptitudeLeadership : 3);
 
       // Cargar Actividades
       loadActivities();
@@ -113,7 +119,10 @@ export default function LeadModal({ lead, onClose, onSaveLead, onDeleteLead }) {
       nextVisitTime,
       notes,
       buyerPersona,
-      openWeekends
+      openWeekends,
+      aptitudeCommitment,
+      aptitudeDigital,
+      aptitudeLeadership
     };
     
     onSaveLead(updatedLead);
@@ -489,6 +498,96 @@ export default function LeadModal({ lead, onClose, onSaveLead, onDeleteLead }) {
                 <option value="hugo">Don Hugo "El Tradicionalista"</option>
                 <option value="socios">Consorcio "Socios Multi-Taller"</option>
               </select>
+            </div>
+
+            {/* Widget de Calificación de Aptitud (Sara Alonso) */}
+            <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3.5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-amber-800 font-extrabold text-xs">
+                  <Target size={14} className="text-amber-600" />
+                  <span>Aptitud del Cliente (Estrategia Sara Alonso)</span>
+                </div>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                  ((Number(aptitudeCommitment) + Number(aptitudeDigital) + Number(aptitudeLeadership)) / 3) >= 4.0 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                  ((Number(aptitudeCommitment) + Number(aptitudeDigital) + Number(aptitudeLeadership)) / 3) < 2.5 ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                  'bg-amber-100 text-amber-800 border border-amber-200'
+                }`}>
+                  {(((Number(aptitudeCommitment) + Number(aptitudeDigital) + Number(aptitudeLeadership)) / 3)).toFixed(1)} / 5.0
+                </span>
+              </div>
+
+              <div className="space-y-2.5 text-xs font-semibold">
+                {/* Compromiso con el Orden */}
+                <div>
+                  <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-0.5">
+                    <span>Compromiso con el Orden:</span>
+                    <span className="text-slate-800">{aptitudeCommitment}★</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    value={aptitudeCommitment}
+                    onChange={(e) => setAptitudeCommitment(Number(e.target.value))}
+                    className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                  />
+                </div>
+
+                {/* Nivel de Digitalización */}
+                <div>
+                  <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-0.5">
+                    <span>Digitalización Mental:</span>
+                    <span className="text-slate-800">{aptitudeDigital}★</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    value={aptitudeDigital}
+                    onChange={(e) => setAptitudeDigital(Number(e.target.value))}
+                    className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                  />
+                </div>
+
+                {/* Liderazgo de Implementación */}
+                <div>
+                  <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-0.5">
+                    <span>Liderazgo / Guía de Maestros:</span>
+                    <span className="text-slate-800">{aptitudeLeadership}★</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    value={aptitudeLeadership}
+                    onChange={(e) => setAptitudeLeadership(Number(e.target.value))}
+                    className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                  />
+                </div>
+              </div>
+
+              {/* Status de Alerta de Aptitud */}
+              <div className="pt-2 border-t border-slate-100">
+                {((Number(aptitudeCommitment) + Number(aptitudeDigital) + Number(aptitudeLeadership)) / 3) >= 4.0 ? (
+                  <p className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded">
+                    🟢 Cliente Apto: Alto compromiso. Ideal para plan anual.
+                  </p>
+                ) : ((Number(aptitudeCommitment) + Number(aptitudeDigital) + Number(aptitudeLeadership)) / 3) < 2.5 ? (
+                  <p className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded">
+                    🔴 Descartar / Riesgo: Muy bajo compromiso. Churn inminente.
+                  </p>
+                ) : (
+                  <p className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded">
+                    🟡 Calificación Crítica: Requiere advertencia de descarte socrático.
+                  </p>
+                )}
+              </div>
+
+              {/* Script de Descarte Socrático (Sara Alonso) */}
+              <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-[10px] text-slate-650 leading-relaxed font-semibold">
+                <span className="font-extrabold text-amber-850 block mb-1">🗣️ Postura de Descarte (Psicología Inversa):</span>
+                "Mire don {name.split(' ')[0] || 'dueño'}, Nexus Garage es una herramienta excelente para frenar fugas de stock, pero requiere que su equipo registre los repuestos. Si usted no está dispuesto a exigir este orden mínimo a sus maestros, nuestro sistema no le servirá. Esto no es para todos. ¿Se compromete a guiar a su equipo, o prefiere seguir con sus fugas actuales?"
+              </div>
             </div>
 
             {/* Widget Guía Comercial Dinámica */}
