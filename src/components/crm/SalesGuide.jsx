@@ -21,12 +21,20 @@ import { dbService } from '../../services/dbService';
 
 export default function SalesGuide({ onLeadCreated }) {
   // Estados de navegación
-  const [currentStep, setCurrentStep] = useState(1); // Steps: 1 (Apertura), 2 (Diagnóstico), 3 (Aptitud), 4 (Simulador & Registro)
+  const [currentStep, setCurrentStep] = useState(1); // Steps: 1 (Apertura), 2 (Diagnóstico), 3 (Demo de Impacto), 4 (Aptitud), 5 (Simulador & Registro)
   
   // Estado de las respuestas y rutas seleccionadas
   const [aperturaRuta, setAperturaRuta] = useState(null); // 'acepta', 'tiempo', 'quien'
   const [dolorSeleccionado, setDolorSeleccionado] = useState(null); // 'bodega', 'rechazo', 'maps', 'ninguno'
   const [aptitudeSeleccionada, setAptitudeSeleccionada] = useState(null); // 'comprometido', 'resistente'
+
+  // Estados para la Demo en Vivo de 3 minutos (Fase 3)
+  const [demoPatente, setDemoPatente] = useState('');
+  const [demoCelular, setDemoCelular] = useState('');
+  const [demoCargando, setDemoCargando] = useState(false);
+  const [demoVehiculo, setDemoVehiculo] = useState(null);
+  const [demoEnviadoCotizacion, setDemoEnviadoCotizacion] = useState(false);
+  const [demoEnviadoListo, setDemoEnviadoListo] = useState(false);
 
   // Variables del formulario para registrar nuevo Lead
   const [tallerName, setTallerName] = useState('');
@@ -180,7 +188,7 @@ export default function SalesGuide({ onLeadCreated }) {
             }`}>
               3
             </div>
-            <span className="text-[10px] font-extrabold text-slate-800 uppercase tracking-wider">Aptitud (Descarte)</span>
+            <span className="text-[10px] font-extrabold text-slate-800 uppercase tracking-wider">Demo (3 min)</span>
           </button>
 
           <button 
@@ -190,9 +198,23 @@ export default function SalesGuide({ onLeadCreated }) {
           >
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border transition-all ${
               currentStep === 4 ? 'bg-cyan-500 border-cyan-500 text-white shadow-lg shadow-cyan-500/25' :
-              'bg-white border-slate-300 text-slate-500'
+              currentStep > 4 ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-300 text-slate-500'
             }`}>
               4
+            </div>
+            <span className="text-[10px] font-extrabold text-slate-800 uppercase tracking-wider">Aptitud (Descarte)</span>
+          </button>
+
+          <button 
+            onClick={() => currentStep >= 5 && setCurrentStep(5)}
+            disabled={currentStep < 5}
+            className={`relative z-10 flex flex-col items-center gap-1 transition-all ${currentStep === 5 ? 'scale-105' : 'opacity-80 disabled:opacity-40'}`}
+          >
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border transition-all ${
+              currentStep === 5 ? 'bg-cyan-500 border-cyan-500 text-white shadow-lg shadow-cyan-500/25' :
+              'bg-white border-slate-300 text-slate-500'
+            }`}>
+              5
             </div>
             <span className="text-[10px] font-extrabold text-slate-800 uppercase tracking-wider">Fugas & Cierre</span>
           </button>
@@ -459,7 +481,7 @@ export default function SalesGuide({ onLeadCreated }) {
                       onClick={() => setCurrentStep(3)}
                       className="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black rounded-lg transition-colors cursor-pointer flex items-center gap-1"
                     >
-                      Siguiente: Calificar Aptitud <ArrowRight size={12} />
+                      Siguiente: Demo en Vivo <ArrowRight size={12} />
                     </button>
                   </div>
                 </div>
@@ -467,8 +489,194 @@ export default function SalesGuide({ onLeadCreated }) {
             </div>
           )}
 
-          {/* FASE 3: CALIFICACIÓN DE APTITUD (SARA ALONSO) */}
+          {/* FASE 3: DEMO DE IMPACTO (EL GANCHO DE LOS 3 MINUTOS) */}
           {currentStep === 3 && (
+            <div className="glass-panel p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-cyan-600">
+                  <Play size={18} className="text-cyan-500 animate-pulse" />
+                  <h3 className="text-sm font-black uppercase tracking-wider">Fase 3: La Carta Ganadora (Demo en vivo en 3 Minutos)</h3>
+                </div>
+                <span className="text-[9px] font-black px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100">
+                  Carta Ganadora de Cierre
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-650 leading-relaxed font-semibold">
+                **La Estrategia**: En lugar de explicar el software, haz que el cliente experimente la magia en su propio celular. Regístrale su auto personal usando su patente y envíale las notificaciones de prueba.
+              </p>
+
+              <div className="p-4 bg-cyan-50 border border-cyan-100 rounded-xl space-y-2">
+                <span className="text-[10px] font-black text-cyan-800 uppercase tracking-wider block">🗣️ Guión sugerido para iniciar la Demo:</span>
+                <p className="text-xs text-slate-700 leading-relaxed font-semibold italic">
+                  "Don [Nombre], hagamos una prueba real en vivo en su propio celular ahora mismo. Dígame la patente de su auto personal para agendarlo y crearle una orden en el sistema. Así verá exactamente lo que sentirá su cliente en su teléfono."
+                </p>
+              </div>
+
+              {/* Simulador Interactivo de Consulta de Patente */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
+                <span className="text-[10px] font-black text-slate-500 tracking-wider block">Simulador de Ingreso en Taller (Obtención de Datos en 3s)</span>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-semibold">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-1">Patente del Dueño (Ej: ABCD12 o AB-CD-12)</label>
+                    <input 
+                      type="text" 
+                      value={demoPatente}
+                      onChange={(e) => setDemoPatente(e.target.value.toUpperCase())}
+                      placeholder="Ingrese patente..." 
+                      className="w-full bg-white border rounded-lg p-2 font-bold uppercase placeholder-slate-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-1">N° Celular del Dueño (WhatsApp)</label>
+                    <input 
+                      type="tel" 
+                      value={demoCelular}
+                      onChange={(e) => setDemoCelular(e.target.value)}
+                      placeholder="Ej: 56912345678" 
+                      className="w-full bg-white border rounded-lg p-2 font-bold placeholder-slate-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!demoPatente.trim()) {
+                        alert("Por favor, ingresa una patente para la simulación.");
+                        return;
+                      }
+                      setDemoCargando(true);
+                      setDemoVehiculo(null);
+                      
+                      // Simular obtención de datos en 2 segundos
+                      setTimeout(() => {
+                        setDemoCargando(false);
+                        const marcas = ['Toyota Hilux', 'Hyundai Santa Fe', 'Chevrolet Sail', 'Suzuki Swift', 'Nissan Qashqai', 'Mitsubishi L200'];
+                        const anios = ['2018', '2019', '2020', '2021', '2022', '2023'];
+                        const marcaModelo = marcas[Math.abs(demoPatente.charCodeAt(0) || 0) % marcas.length];
+                        const anio = anios[Math.abs(demoPatente.charCodeAt(1) || 0) % anios.length];
+                        const vin = `93HGD${Math.floor(100000 + Math.random() * 900000)}HJA9105432`;
+                        
+                        setDemoVehiculo({
+                          marca: marcaModelo,
+                          anio: anio,
+                          vin: vin
+                        });
+                        
+                        // Autocompletar variables del lead
+                        if (!tallerNotes) {
+                          setTallerNotes(`Auto del dueño registrado en Demo: ${marcaModelo} (${anio}), patente ${demoPatente}.`);
+                        }
+                      }, 2000);
+                    }}
+                    disabled={demoCargando}
+                    className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {demoCargando ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Consultando Patente (3 segundos)...
+                      </>
+                    ) : (
+                      <>
+                        <span>⚡ Obtener datos del vehículo</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Resultados de la Consulta */}
+                {demoVehiculo && (
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3 space-y-3 animate-fadeIn">
+                    <div className="flex items-center gap-1.5 text-emerald-800 font-extrabold text-[10px]">
+                      <CheckCircle size={14} className="text-emerald-600" />
+                      <span>VEHÍCULO IDENTIFICADO EN MENOS DE 3 SEGUNDOS</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2 text-[10px] font-bold text-slate-700">
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Vehículo</span>
+                        <span>{demoVehiculo.marca}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Año</span>
+                        <span>{demoVehiculo.anio}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">N° VIN / Chasis</span>
+                        <span className="font-mono">{demoVehiculo.vin.substring(0, 10)}...</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200 space-y-2">
+                      <span className="text-[10px] font-extrabold text-slate-700 block">Enviar pruebas al celular del dueño por WhatsApp:</span>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {/* Botón 1: Enviar Cotización */}
+                        <a
+                          href={`https://api.whatsapp.com/send?phone=${demoCelular.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(
+                            `Hola don Marcelo, aquí tiene la cotización interactiva para su ${demoVehiculo.marca} de mantenimiento en Nexus Garage. Puede revisarla y aprobar los trabajos aquí: https://demo.smartlean.cl/cotizacion/12345`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setDemoEnviadoCotizacion(true)}
+                          className={`py-2 px-3 rounded-lg text-[10px] font-black text-center flex items-center justify-center gap-1.5 transition-colors ${
+                            demoEnviadoCotizacion 
+                              ? 'bg-emerald-100 text-emerald-805 border border-emerald-200' 
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+                          }`}
+                        >
+                          💬 1. Enviar Cotización Interactiva
+                        </a>
+
+                        {/* Botón 2: Enviar Vehículo Listo */}
+                        <a
+                          href={`https://api.whatsapp.com/send?phone=${demoCelular.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(
+                            `Hola don Marcelo, le notificamos que su ${demoVehiculo.marca} patente ${demoPatente} está listo para ser retirado en nuestro taller. Puede ver el detalle de los repuestos cambiados y su garantía aquí: https://demo.smartlean.cl/entrega/12345`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setDemoEnviadoListo(true)}
+                          className={`py-2 px-3 rounded-lg text-[10px] font-black text-center flex items-center justify-center gap-1.5 transition-colors ${
+                            demoEnviadoListo 
+                              ? 'bg-emerald-100 text-emerald-805 border border-emerald-200' 
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+                          }`}
+                        >
+                          🚗 2. Enviar "Auto Listo"
+                        </a>
+                      </div>
+                      <p className="text-[9px] text-slate-500 font-medium italic">
+                        * Nota: Al presionar se abrirá WhatsApp con el mensaje pre-cargado para enviar al dueño del taller.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Botones de navegación de la Fase 3 */}
+              <div className="flex gap-2 pt-2">
+                <button 
+                  onClick={() => setCurrentStep(2)}
+                  className="px-3 py-1.5 bg-white border border-slate-350 hover:bg-slate-55 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <ArrowLeft size={12} /> Atrás
+                </button>
+                <button 
+                  onClick={() => setCurrentStep(4)}
+                  className="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  Siguiente: Calificar Aptitud <ArrowRight size={12} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* FASE 4: CALIFICACIÓN DE APTITUD (SARA ALONSO) */}
+          {currentStep === 4 && (
             <div className="glass-panel p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-amber-600">
@@ -580,13 +788,13 @@ export default function SalesGuide({ onLeadCreated }) {
 
                   <div className="flex gap-2 pt-2">
                     <button 
-                      onClick={() => setCurrentStep(2)}
+                      onClick={() => setCurrentStep(3)}
                       className="px-3 py-1.5 bg-white border border-slate-350 hover:bg-slate-55 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1"
                     >
                       <ArrowLeft size={12} /> Atrás
                     </button>
                     <button 
-                      onClick={() => setCurrentStep(4)}
+                      onClick={() => setCurrentStep(5)}
                       className="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black rounded-lg transition-colors cursor-pointer flex items-center gap-1"
                     >
                       Siguiente: Fugas & Registro <ArrowRight size={12} />
@@ -597,15 +805,15 @@ export default function SalesGuide({ onLeadCreated }) {
             </div>
           )}
 
-          {/* FASE 4: SIMULADOR DE FUGAS & REGISTRO DE LEADS */}
-          {currentStep === 4 && (
+          {/* FASE 5: SIMULADOR DE FUGAS & REGISTRO DE LEADS */}
+          {currentStep === 5 && (
             <div className="space-y-6">
               
               {/* Formulario e Inputs de Fugas */}
               <div className="glass-panel p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4">
                 <div className="flex items-center gap-2 text-cyan-600">
                   <DollarSign size={18} className="text-cyan-500 animate-pulse" />
-                  <h3 className="text-sm font-black uppercase tracking-wider">Fase 4: Demostración Matemática y Registro</h3>
+                  <h3 className="text-sm font-black uppercase tracking-wider">Fase 5: Demostración Matemática y Registro</h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
@@ -744,7 +952,7 @@ export default function SalesGuide({ onLeadCreated }) {
                   <div className="flex gap-3 justify-end pt-2">
                     <button 
                       type="button"
-                      onClick={() => setCurrentStep(3)}
+                      onClick={() => setCurrentStep(4)}
                       className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold transition-colors cursor-pointer flex items-center gap-1"
                     >
                       <ArrowLeft size={14} /> Volver a Aptitud
