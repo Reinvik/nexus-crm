@@ -7,6 +7,7 @@ import SettingsView from './components/crm/SettingsView';
 import LeadModal from './components/crm/LeadModal';
 import BuyerPersonas from './components/crm/BuyerPersonas';
 import MentorshipPlaybook from './components/crm/MentorshipPlaybook';
+import SalesGuide from './components/crm/SalesGuide';
 import { dbService } from './services/dbService';
 import { Menu, Calendar } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
@@ -141,6 +142,7 @@ export default function App() {
       case 'hunter': return 'Nexus Hunter - Prospección Google Maps';
       case 'personas': return 'Perfiles de Clientes Ideales (Buyer Personas)';
       case 'playbook': return 'Playbook Comercial: Diagnósticos y Cierres';
+      case 'sales-guide': return 'Asistente de Ventas en Vivo';
       case 'settings': return 'Configuración de Sistema';
       default: return 'Nexus CRM';
     }
@@ -216,6 +218,13 @@ export default function App() {
                 )}
                 {currentView === 'playbook' && (
                   <MentorshipPlaybook />
+                )}
+                {currentView === 'sales-guide' && (
+                  <SalesGuide 
+                    onLeadCreated={(newLead) => {
+                      setLeads(prev => [newLead, ...prev]);
+                    }} 
+                  />
                 )}
                 {currentView === 'settings' && (
                   <SettingsView />

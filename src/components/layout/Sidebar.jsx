@@ -9,7 +9,8 @@ import {
   TrendingUp,
   LogOut,
   Users,
-  ScrollText
+  ScrollText,
+  PhoneCall
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -21,6 +22,7 @@ export default function Sidebar({ currentView, setCurrentView, isOpen, setIsOpen
     { id: 'hunter', name: 'Nexus Hunter', icon: Map },
     { id: 'personas', name: 'Buyer Personas', icon: Users },
     { id: 'playbook', name: 'Playbook de Cierre', icon: ScrollText },
+    { id: 'sales-guide', name: 'Asistente de Ventas', icon: PhoneCall },
     { id: 'settings', name: 'Configuración', icon: Settings },
   ];
 
