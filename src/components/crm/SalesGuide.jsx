@@ -26,7 +26,7 @@ export default function SalesGuide({ onLeadCreated }) {
   // Estado de las respuestas y rutas seleccionadas
   const [aperturaRuta, setAperturaRuta] = useState(null); // 'acepta', 'tiempo', 'quien'
   const [dolorSeleccionado, setDolorSeleccionado] = useState(null); // 'bodega', 'rechazo', 'maps', 'ninguno'
-  const [aptitudSeleccionada, setAptitudSeleccionada] = useState(null); // 'comprometido', 'resistente'
+  const [aptitudeSeleccionada, setAptitudeSeleccionada] = useState(null); // 'comprometido', 'resistente'
 
   // Variables del formulario para registrar nuevo Lead
   const [tallerName, setTallerName] = useState('');
