@@ -778,27 +778,23 @@ export default function SalesGuide({ onLeadCreated }) {
         <div className="space-y-6">
           
           {/* Tarjeta 1: Indicador de Postura Mental */}
-          <div className="glass-panel p-5 rounded-2xl bg-[#090e1f] border border-cyan-500/20 text-white shadow-xl relative overflow-hidden">
-            <div className="absolute inset-0 z-0 pointer-events-none">
-              <div className="absolute -top-12 -right-12 w-32 h-32 bg-cyan-600/10 rounded-full filter blur-2xl"></div>
-            </div>
-
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4 relative overflow-hidden">
             <div className="relative z-10 space-y-4 text-xs font-semibold">
-              <div className="flex items-center gap-1.5 text-cyan-400 font-extrabold text-[10px] bg-cyan-500/10 px-2 py-0.5 rounded-full w-max border border-cyan-500/25">
-                <Target size={12} />
+              <div className="flex items-center gap-1.5 text-cyan-800 font-extrabold text-[10px] bg-cyan-50 border border-cyan-100/80 px-2.5 py-1 rounded-full w-max">
+                <Target size={12} className="text-cyan-600" />
                 <span>Mentalidad del Auditor de Ventas</span>
               </div>
               
-              <div className="space-y-3 text-slate-400">
+              <div className="space-y-4">
                 <div className="space-y-1">
-                  <span className="text-slate-200 font-bold block text-[11px] uppercase tracking-wider text-cyan-300">1. Posición de Autoridad</span>
-                  <p className="text-[10px] text-slate-350 leading-relaxed font-medium">
+                  <span className="text-slate-800 font-extrabold block text-xs uppercase tracking-wider">1. Posición de Autoridad</span>
+                  <p className="text-[11px] text-slate-600 leading-relaxed font-semibold">
                     Tú eres un consultor de procesos Lean, no un vendedor de software. No ruegues por tiempo. Haz preguntas difíciles de control y deja que el dueño sienta el dolor de la desorganización de su taller.
                   </p>
                 </div>
-                <div className="space-y-1 pt-2.5 border-t border-slate-800">
-                  <span className="text-slate-205 font-bold block text-[11px] uppercase tracking-wider text-amber-400">2. Descarte Sara Alonso</span>
-                  <p className="text-[10px] text-slate-350 leading-relaxed font-medium">
+                <div className="space-y-1 pt-3.5 border-t border-slate-100">
+                  <span className="text-slate-800 font-extrabold block text-xs uppercase tracking-wider">2. Descarte Sara Alonso</span>
+                  <p className="text-[11px] text-slate-600 leading-relaxed font-semibold">
                     Advierte que el software no hace milagros. Si el dueño no lidera con el ejemplo, el software no le servirá. Forzar a que te digan *"Yo sí me comprometo"* genera un pacto de honor en la venta.
                   </p>
                 </div>
