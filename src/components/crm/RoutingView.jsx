@@ -93,8 +93,8 @@ export default function RoutingView({ leads }) {
     const geocodeFilteredLeads = async () => {
       setIsGeocoding(true);
       
-      // Cache en localStorage para evitar re-peticiones a Nominatim
-      const cachedCoordsStr = localStorage.getItem('nexus_crm_geocoded_coords') || '{}';
+      // Cache en localStorage para evitar re-peticiones a Nominatim (v2 con mayor precisión)
+      const cachedCoordsStr = localStorage.getItem('nexus_crm_geocoded_coords_v2') || '{}';
       const cachedCoords = JSON.parse(cachedCoordsStr);
       let updatedCache = false;
 
@@ -112,8 +112,24 @@ export default function RoutingView({ leads }) {
         } else {
           // Intentar geocodificación Nominatim aproximada
           try {
-            // Buscamos con formato dirección, comuna, Santiago, Chile
-            const queryUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(`${lead.address}, ${lead.commune}, Santiago, Chile`)}&limit=1`;
+            // 1. Quitar el código postal de 7 dígitos si viene en la dirección de Outscraper
+            let cleanAddr = lead.address.replace(/\b\d{7}\b/g, '');
+            // 2. Limpiar espacios extra
+            cleanAddr = cleanAddr.replace(/\s+/g, ' ').trim();
+            // 3. Evitar duplicación de comunas
+            let queryText = cleanAddr;
+            if (lead.commune && !cleanAddr.toLowerCase().includes(lead.commune.toLowerCase())) {
+              queryText += `, ${lead.commune}`;
+            }
+            // 4. Agregar Santiago y Chile
+            if (!queryText.toLowerCase().includes('santiago')) {
+              queryText += `, Santiago`;
+            }
+            if (!queryText.toLowerCase().includes('chile')) {
+              queryText += `, Chile`;
+            }
+
+            const queryUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryText)}&limit=1`;
             
             // Añadir un pequeño sleep para evitar Rate Limit 429
             await new Promise(resolve => setTimeout(resolve, 350));
@@ -153,7 +169,7 @@ export default function RoutingView({ leads }) {
       }
 
       if (updatedCache) {
-        localStorage.setItem('nexus_crm_geocoded_coords', JSON.stringify(cachedCoords));
+        localStorage.setItem('nexus_crm_geocoded_coords_v2', JSON.stringify(cachedCoords));
       }
 
       setGeocodedLeads(processed);
