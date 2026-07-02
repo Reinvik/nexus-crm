@@ -210,10 +210,11 @@ export default function App() {
                       setIsModalOpen(true);
                     }}
                     onAddNewLead={handleAddNewLead}
+                    onDeleteLead={handleDeleteLead}
                   />
                 )}
                 {currentView === 'routing' && (
-                  <RoutingView leads={leads} />
+                  <RoutingView leads={leads} onDeleteLead={handleDeleteLead} />
                 )}
                 {currentView === 'hunter' && (
                   <NexusHunter onImportLeads={handleImportLeads} />

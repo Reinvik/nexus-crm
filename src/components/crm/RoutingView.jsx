@@ -119,7 +119,7 @@ const geocodeSingleLead = async (lead, cachedCoords) => {
   };
 };
 
-export default function RoutingView({ leads }) {
+export default function RoutingView({ leads, onDeleteLead }) {
   const [selectedCommune, setSelectedCommune] = useState('all');
   const [selectedStage, setSelectedStage] = useState('all');
   const [selectedPriority, setSelectedPriority] = useState('all');
@@ -540,20 +540,34 @@ export default function RoutingView({ leads }) {
                       }`}>{lead.priority}</span>
                     </div>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      inRoute ? removeFromRoute(lead.id) : addToRoute(lead);
-                    }}
-                    className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-                      inRoute 
-                        ? 'bg-rose-50 text-rose-500 border-rose-100 hover:bg-rose-500 hover:text-white' 
-                        : 'bg-cyan-50 text-cyan-600 border-cyan-100 hover:bg-cyan-500 hover:text-white'
-                    }`}
-                    title={inRoute ? "Quitar de mi Ruta" : "Agregar a mi Ruta"}
-                  >
-                    {inRoute ? <Trash2 size={12} /> : <Plus size={12} />}
-                  </button>
+                  <div className="flex flex-col gap-1.5 shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        inRoute ? removeFromRoute(lead.id) : addToRoute(lead);
+                      }}
+                      className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                        inRoute 
+                          ? 'bg-cyan-50 text-cyan-600 border-cyan-100 hover:bg-cyan-500 hover:text-white' 
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-cyan-500 hover:text-white'
+                      }`}
+                      title={inRoute ? "Quitar de mi Ruta" : "Agregar a mi Ruta"}
+                    >
+                      {inRoute ? <Check size={12} /> : <Plus size={12} />}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`¿Estás seguro de eliminar permanentemente a "${lead.name}" del CRM?`)) {
+                          onDeleteLead(lead.id);
+                        }
+                      }}
+                      className="p-1.5 rounded-lg border border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all cursor-pointer"
+                      title="Eliminar Lead Permanentemente"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
                 </div>
               );
             })}

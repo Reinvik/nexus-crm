@@ -11,7 +11,8 @@ import {
   CheckCircle,
   XCircle,
   TrendingUp,
-  MapPin
+  MapPin,
+  Trash2
 } from 'lucide-react';
 
 const STAGES = [
@@ -23,7 +24,7 @@ const STAGES = [
   { id: 'perdido', name: 'En Espera / Stand-by', color: 'bg-rose-50/50 border-t-rose-400 text-rose-700' },
 ];
 
-export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAddNewLead }) {
+export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAddNewLead, onDeleteLead }) {
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [communeFilter, setCommuneFilter] = useState('all');
@@ -300,8 +301,8 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
                           </a>
                         </div>
 
-                        {/* Botón WhatsApp */}
-                        <div className="flex gap-1.5">
+                        {/* Botón Acciones */}
+                        <div className="flex gap-1">
                           {lead.phone && (
                             <a
                               href={getWhatsAppLink(lead)}
@@ -311,7 +312,7 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
                               className="w-7 h-7 rounded-lg bg-green-50 hover:bg-green-500 hover:text-white text-green-600 flex items-center justify-center transition-all cursor-pointer shadow-sm border border-green-100/50"
                               title="Enviar Pitch por WhatsApp"
                             >
-                              <Phone size={12} />
+                              <Phone size={11} />
                             </a>
                           )}
                           
@@ -320,9 +321,22 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
                               className="w-7 h-7 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center border border-cyan-100/50"
                               title={`Visita agendada: ${lead.nextVisitDate}`}
                             >
-                              <Calendar size={12} />
+                              <Calendar size={11} />
                             </div>
                           )}
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`¿Estás seguro de eliminar permanentemente a "${lead.name}"?`)) {
+                                onDeleteLead(lead.id);
+                              }
+                            }}
+                            className="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 flex items-center justify-center transition-all cursor-pointer shadow-sm border border-rose-100/50"
+                            title="Eliminar Prospecto"
+                          >
+                            <Trash2 size={11} />
+                          </button>
                         </div>
                       </div>
 
