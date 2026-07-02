@@ -12,7 +12,8 @@ import {
   Filter,
   ArrowUp,
   ArrowDown,
-  Info
+  Info,
+  RefreshCw
 } from 'lucide-react';
 import L from 'leaflet';
 
