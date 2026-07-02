@@ -13,7 +13,8 @@ import {
   ArrowUp,
   ArrowDown,
   Info,
-  RefreshCw
+  RefreshCw,
+  Locate
 } from 'lucide-react';
 import L from 'leaflet';
 
@@ -59,6 +60,65 @@ function getCommuneCoords(communeName) {
   return COMMUNE_COORDS[normalized] || [-33.4489, -70.6693];
 }
 
+// Helper asíncrono para geocodificar un único taller
+const geocodeSingleLead = async (lead, cachedCoords) => {
+  const cacheKey = `${lead.name}_${lead.address}`.toLowerCase();
+  
+  if (cachedCoords[cacheKey]) {
+    return { ...lead, lat: cachedCoords[cacheKey].lat, lon: cachedCoords[cacheKey].lon };
+  }
+
+  try {
+    // 1. Quitar el código postal de 7 dígitos si viene en la dirección de Outscraper
+    let cleanAddr = lead.address.replace(/\b\d{7}\b/g, '');
+    // 2. Limpiar espacios extra
+    cleanAddr = cleanAddr.replace(/\s+/g, ' ').trim();
+    // 3. Evitar duplicación de comunas
+    let queryText = cleanAddr;
+    if (lead.commune && !cleanAddr.toLowerCase().includes(lead.commune.toLowerCase())) {
+      queryText += `, ${lead.commune}`;
+    }
+    // 4. Agregar Santiago y Chile
+    if (!queryText.toLowerCase().includes('santiago')) {
+      queryText += `, Santiago`;
+    }
+    if (!queryText.toLowerCase().includes('chile')) {
+      queryText += `, Chile`;
+    }
+
+    const queryUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryText)}&limit=1`;
+    
+    // Sleep para evitar Rate Limit 429
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const response = await fetch(queryUrl, {
+      headers: { 'User-Agent': 'NexusCRM-Geocoding-System/1.0' }
+    });
+
+    if (response.ok) {
+      const results = await response.json();
+      if (results && results.length > 0) {
+        const lat = parseFloat(results[0].lat);
+        const lon = parseFloat(results[0].lon);
+        cachedCoords[cacheKey] = { lat, lon };
+        return { ...lead, lat, lon, isNewGeocode: true };
+      }
+    }
+  } catch (e) {
+    console.warn("Geocodificación fallida para:", lead.name);
+  }
+
+  // Fallback a coordenadas de comuna
+  const base = getCommuneCoords(lead.commune);
+  const randomOffsetLat = (Math.random() - 0.5) * 0.012;
+  const randomOffsetLon = (Math.random() - 0.5) * 0.012;
+  
+  return {
+    ...lead,
+    lat: base[0] + randomOffsetLat,
+    lon: base[1] + randomOffsetLon
+  };
+};
+
 export default function RoutingView({ leads }) {
   const [selectedCommune, setSelectedCommune] = useState('all');
   const [selectedStage, setSelectedStage] = useState('all');
@@ -67,15 +127,17 @@ export default function RoutingView({ leads }) {
   const [geocodedLeads, setGeocodedLeads] = useState([]);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [focusedLead, setFocusedLead] = useState(null);
 
   // Refs de Leaflet
   const mapRef = useRef(null);
   const mapContainerRef = useRef(null);
   const markersLayerRef = useRef(null);
   const polylineLayerRef = useRef(null);
+  const markersMapRef = useRef({}); // leadId -> L.marker
 
   // Obtener comunas para filtrar
-  const communes = ['all', ...new Set(leads.map(l => l.commune).filter(Boolean))];
+  const communes = ['all', ...new Set(leads.map(l => l.commune).filter(Boolean))].sort();
 
   // Filtrar los leads activos
   const filteredLeads = leads.filter(lead => {
@@ -88,84 +150,42 @@ export default function RoutingView({ leads }) {
     return matchesCommune && matchesStage && matchesPriority && matchesSearch;
   });
 
-  // Efecto para geocodificar la sublista filtrada de leads
+  // Efecto para geocodificar la sublista de leads en base a la comuna
   useEffect(() => {
     const geocodeFilteredLeads = async () => {
       setIsGeocoding(true);
       
-      // Cache en localStorage para evitar re-peticiones a Nominatim (v2 con mayor precisión)
       const cachedCoordsStr = localStorage.getItem('nexus_crm_geocoded_coords_v2') || '{}';
       const cachedCoords = JSON.parse(cachedCoordsStr);
       let updatedCache = false;
 
-      // Limitamos a procesar un máximo de 40 leads simultáneos para no saturar
-      const leadsToProcess = filteredLeads.slice(0, 40);
+      // Determinar qué leads geocodificar
+      let leadsToProcess = [];
+
+      // Si hay comuna seleccionada, procesamos los talleres de esa comuna (máximo 40)
+      if (selectedCommune !== 'all') {
+        leadsToProcess = [...filteredLeads.slice(0, 40)];
+      }
+
+      // Siempre incluimos los items de la ruta activa para que no desaparezcan
+      routeItems.forEach(item => {
+        if (!leadsToProcess.some(l => l.id === item.id)) {
+          leadsToProcess.push(item);
+        }
+      });
+
+      // Siempre incluimos el lead enfocado
+      if (focusedLead && !leadsToProcess.some(l => l.id === focusedLead.id)) {
+        leadsToProcess.push(focusedLead);
+      }
 
       const processed = [];
       for (const lead of leadsToProcess) {
-        const cacheKey = `${lead.name}_${lead.address}`.toLowerCase();
-        let lat, lon;
-
-        if (cachedCoords[cacheKey]) {
-          lat = cachedCoords[cacheKey].lat;
-          lon = cachedCoords[cacheKey].lon;
-        } else {
-          // Intentar geocodificación Nominatim aproximada
-          try {
-            // 1. Quitar el código postal de 7 dígitos si viene en la dirección de Outscraper
-            let cleanAddr = lead.address.replace(/\b\d{7}\b/g, '');
-            // 2. Limpiar espacios extra
-            cleanAddr = cleanAddr.replace(/\s+/g, ' ').trim();
-            // 3. Evitar duplicación de comunas
-            let queryText = cleanAddr;
-            if (lead.commune && !cleanAddr.toLowerCase().includes(lead.commune.toLowerCase())) {
-              queryText += `, ${lead.commune}`;
-            }
-            // 4. Agregar Santiago y Chile
-            if (!queryText.toLowerCase().includes('santiago')) {
-              queryText += `, Santiago`;
-            }
-            if (!queryText.toLowerCase().includes('chile')) {
-              queryText += `, Chile`;
-            }
-
-            const queryUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryText)}&limit=1`;
-            
-            // Añadir un pequeño sleep para evitar Rate Limit 429
-            await new Promise(resolve => setTimeout(resolve, 350));
-            const response = await fetch(queryUrl, {
-              headers: { 'User-Agent': 'NexusCRM-Geocoding-System/1.0' }
-            });
-
-            if (response.ok) {
-              const results = await response.json();
-              if (results && results.length > 0) {
-                lat = parseFloat(results[0].lat);
-                lon = parseFloat(results[0].lon);
-                cachedCoords[cacheKey] = { lat, lon };
-                updatedCache = true;
-              }
-            }
-          } catch (e) {
-            console.warn("Geocodificación fallida para:", lead.name);
-          }
-
-          // Fallback si falla Nominatim: usar centro de comuna con pequeña dispersión aleatoria
-          if (!lat || !lon) {
-            const base = getCommuneCoords(lead.commune);
-            // Pequeña dispersión aleatoria (0.015) para que no se encimen los marcadores
-            const randomOffsetLat = (Math.random() - 0.5) * 0.015;
-            const randomOffsetLon = (Math.random() - 0.5) * 0.015;
-            lat = base[0] + randomOffsetLat;
-            lon = base[1] + randomOffsetLon;
-          }
+        const res = await geocodeSingleLead(lead, cachedCoords);
+        if (res.isNewGeocode) {
+          updatedCache = true;
         }
-
-        processed.push({
-          ...lead,
-          lat,
-          lon
-        });
+        processed.push(res);
       }
 
       if (updatedCache) {
@@ -177,7 +197,7 @@ export default function RoutingView({ leads }) {
     };
 
     geocodeFilteredLeads();
-  }, [selectedCommune, selectedStage, selectedPriority, searchTerm, leads]);
+  }, [selectedCommune, selectedStage, selectedPriority, searchTerm, leads, routeItems, focusedLead]);
 
   // Inicializar Mapa Leaflet
   useEffect(() => {
@@ -225,39 +245,53 @@ export default function RoutingView({ leads }) {
     // Limpiar marcadores y rutas anteriores
     markersLayer.clearLayers();
     polylineLayer.clearLayers();
+    markersMapRef.current = {};
 
     const bounds = L.latLngBounds();
     const routeCoords = [];
 
     // Icono por defecto de taller mecánico (Pin cian y oscuro)
     const defaultIcon = L.divIcon({
-      html: `<div class="w-8 h-8 rounded-full bg-slate-900 border-2 border-cyan-400 flex items-center justify-center shadow-lg transition-transform hover:scale-110">
-               <span class="text-xs font-black text-cyan-400">🔧</span>
+      html: `<div class="w-7 h-7 rounded-full bg-slate-900 border-2 border-cyan-400 flex items-center justify-center shadow-lg transition-transform hover:scale-110">
+               <span class="text-[10px] font-black text-cyan-400">🔧</span>
              </div>`,
       className: '',
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
       popupAnchor: [0, -10]
     });
 
     // Dibujar todos los leads geocodificados
     geocodedLeads.forEach(lead => {
       const isSelectedInRoute = routeItems.some(item => item.id === lead.id);
+      const isFocused = focusedLead && focusedLead.id === lead.id;
       
-      // Icono alternativo si ya está en la ruta
-      const icon = isSelectedInRoute
-        ? L.divIcon({
-            html: `<div class="w-8 h-8 rounded-full bg-cyan-500 border-2 border-white flex items-center justify-center shadow-lg animate-bounce">
-                     <span class="text-xs font-black text-white">${routeItems.findIndex(i => i.id === lead.id) + 1}</span>
-                   </div>`,
-            className: '',
-            iconSize: [32, 32],
-            iconAnchor: [16, 16],
-            popupAnchor: [0, -10]
-          })
-        : defaultIcon;
+      // Icono alternativo si ya está en la ruta o está en foco
+      let icon = defaultIcon;
+      if (isSelectedInRoute) {
+        icon = L.divIcon({
+          html: `<div class="w-8 h-8 rounded-full bg-cyan-500 border-2 border-white flex items-center justify-center shadow-lg animate-bounce">
+                   <span class="text-xs font-black text-white">${routeItems.findIndex(i => i.id === lead.id) + 1}</span>
+                 </div>`,
+          className: '',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -10]
+        });
+      } else if (isFocused) {
+        icon = L.divIcon({
+          html: `<div class="w-8 h-8 rounded-full bg-amber-500 border-2 border-slate-950 flex items-center justify-center shadow-lg animate-pulse scale-110">
+                   <span class="text-xs font-black text-slate-950">📍</span>
+                 </div>`,
+          className: '',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -10]
+        });
+      }
 
       const marker = L.marker([lead.lat, lead.lon], { icon }).addTo(markersLayer);
+      markersMapRef.current[lead.id] = marker;
       bounds.extend([lead.lat, lead.lon]);
 
       // Pop-up con info del Lead
@@ -299,7 +333,6 @@ export default function RoutingView({ leads }) {
 
     // Dibujar la línea de itinerario
     routeItems.forEach(item => {
-      // Buscar el lead geocodificado correspondiente
       const geo = geocodedLeads.find(l => l.id === item.id);
       if (geo) {
         routeCoords.push([geo.lat, geo.lon]);
@@ -307,9 +340,8 @@ export default function RoutingView({ leads }) {
     });
 
     if (routeCoords.length > 1) {
-      // Línea poligonal cian semi-transparente con sombra
       L.polyline(routeCoords, {
-        color: '#06b6d4', // Cyan 500
+        color: '#06b6d4',
         weight: 4,
         opacity: 0.8,
         dashArray: '8, 8',
@@ -317,11 +349,51 @@ export default function RoutingView({ leads }) {
       }).addTo(polylineLayer);
     }
 
-    // Auto-ajustar vista del mapa si hay marcadores
-    if (geocodedLeads.length > 0) {
+    // Auto-ajustar vista del mapa si hay marcadores y estamos en una comuna específica
+    if (geocodedLeads.length > 0 && selectedCommune !== 'all') {
       map.fitBounds(bounds, { padding: [40, 40] });
     }
-  }, [geocodedLeads, routeItems]);
+  }, [geocodedLeads, routeItems, focusedLead, selectedCommune]);
+
+  // Enfocar un lead específico de la lista lateral en el mapa
+  const handleFocusLead = async (lead) => {
+    setFocusedLead(lead);
+    
+    // Si ya está geocodificado, centramos el mapa de inmediato
+    const geo = geocodedLeads.find(l => l.id === lead.id);
+    if (geo && mapRef.current) {
+      mapRef.current.setView([geo.lat, geo.lon], 16, { animate: true });
+      setTimeout(() => {
+        const marker = markersMapRef.current[lead.id];
+        if (marker) {
+          marker.openPopup();
+        }
+      }, 350);
+    } else {
+      // Si no estaba geocodificado (ej: comuna es 'all'), el useEffect lo procesará al actualizar focusedLead
+      // Centraremos en la coordenada tan pronto como esté disponible
+      const cachedCoordsStr = localStorage.getItem('nexus_crm_geocoded_coords_v2') || '{}';
+      const cachedCoords = JSON.parse(cachedCoordsStr);
+      
+      const res = await geocodeSingleLead(lead, cachedCoords);
+      if (mapRef.current) {
+        mapRef.current.setView([res.lat, res.lon], 16, { animate: true });
+        
+        // Agregar temporalmente al listado de geocoded para que dibuje el marcador
+        setGeocodedLeads(prev => {
+          if (prev.some(p => p.id === res.id)) return prev;
+          return [...prev, res];
+        });
+
+        setTimeout(() => {
+          const marker = markersMapRef.current[lead.id];
+          if (marker) {
+            marker.openPopup();
+          }
+        }, 400);
+      }
+    }
+  };
 
   // Agregar lead al itinerario
   const addToRoute = (lead) => {
@@ -351,7 +423,6 @@ export default function RoutingView({ leads }) {
   // Generar enlace a Google Maps Navigation Multi-punto
   const getGoogleMapsRouteLink = () => {
     if (routeItems.length === 0) return '';
-    // Formato: https://www.google.com/maps/dir/lat1,lon1/lat2,lon2/lat3,lon3
     const base = 'https://www.google.com/maps/dir/';
     const coordsPath = routeItems.map(item => {
       const geo = geocodedLeads.find(l => l.id === item.id);
@@ -384,10 +455,13 @@ export default function RoutingView({ leads }) {
             <Filter size={12} />
             <select
               value={selectedCommune}
-              onChange={(e) => setSelectedCommune(e.target.value)}
+              onChange={(e) => {
+                setSelectedCommune(e.target.value);
+                setFocusedLead(null); // Limpiar foco
+              }}
               className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold text-slate-700"
             >
-              <option value="all">Todas las Comunas ({communes.length - 1})</option>
+              <option value="all">Todas las Comunas (Ver Santiago Centro)</option>
               {communes.filter(c => c !== 'all').map(commune => (
                 <option key={commune} value={commune}>{commune}</option>
               ))}
@@ -443,22 +517,34 @@ export default function RoutingView({ leads }) {
               </div>
             )}
             
-            {geocodedLeads.map(lead => {
+            {filteredLeads.map(lead => {
               const inRoute = routeItems.some(i => i.id === lead.id);
+              const isFocused = focusedLead && focusedLead.id === lead.id;
+              
               return (
                 <div 
                   key={lead.id}
-                  className={`p-2.5 rounded-xl border border-slate-100 transition-all text-xs bg-slate-50/50 hover:bg-slate-50 flex justify-between items-start gap-2 ${
-                    inRoute ? 'border-cyan-300 bg-cyan-50/10' : ''
+                  onClick={() => handleFocusLead(lead)}
+                  className={`p-2.5 rounded-xl border border-slate-100 transition-all text-xs bg-slate-50/50 hover:bg-slate-50 flex justify-between items-start gap-2 cursor-pointer ${
+                    isFocused ? 'border-amber-400 bg-amber-50/5' : 
+                    inRoute ? 'border-cyan-300 bg-cyan-50/5' : ''
                   }`}
                 >
                   <div className="space-y-0.5 truncate flex-1">
-                    <h5 className="font-extrabold text-slate-800 tracking-tight leading-tight truncate">{lead.name}</h5>
+                    <h5 className="font-extrabold text-slate-800 tracking-tight leading-tight truncate group-hover:text-cyan-600">{lead.name}</h5>
                     <p className="text-[10px] text-slate-400 truncate">{lead.address}</p>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase">{lead.commune}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="text-[8px] font-bold px-1.5 py-0.5 bg-slate-200/80 text-slate-600 rounded uppercase tracking-wider">{lead.commune}</span>
+                      <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${
+                        lead.priority === 'Alta' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'
+                      }`}>{lead.priority}</span>
+                    </div>
                   </div>
                   <button
-                    onClick={() => inRoute ? removeFromRoute(lead.id) : addToRoute(lead)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      inRoute ? removeFromRoute(lead.id) : addToRoute(lead);
+                    }}
                     className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                       inRoute 
                         ? 'bg-rose-50 text-rose-500 border-rose-100 hover:bg-rose-500 hover:text-white' 
@@ -472,7 +558,7 @@ export default function RoutingView({ leads }) {
               );
             })}
 
-            {geocodedLeads.length === 0 && !isGeocoding && (
+            {filteredLeads.length === 0 && !isGeocoding && (
               <div className="py-12 text-center text-slate-400 text-[11px] font-semibold space-y-1">
                 <Info size={16} className="mx-auto text-slate-300" />
                 <p>No se encontraron prospectos.</p>
@@ -486,11 +572,23 @@ export default function RoutingView({ leads }) {
         <div className="lg:col-span-2 bg-slate-100 border border-slate-200/60 rounded-2xl shadow-sm overflow-hidden h-full relative">
           <div ref={mapContainerRef} className="w-full h-full z-0" />
           
+          {/* Overlay informativo cuando no hay comuna seleccionada */}
+          {selectedCommune === 'all' && !focusedLead && (
+            <div className="absolute inset-x-0 bottom-6 mx-auto w-11/12 md:w-3/4 bg-slate-900/90 backdrop-blur text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-800 z-[1000] text-center space-y-1">
+              <p className="text-xs font-black tracking-tight text-cyan-400 flex items-center justify-center gap-1.5">
+                <Locate size={14} className="animate-pulse" /> Vista de Santiago Centro
+              </p>
+              <p className="text-[10px] text-slate-300 leading-normal">
+                Para evitar saturación de pantalla, selecciona una **Comuna** en el filtro superior o haz clic en cualquier taller de la lista lateral para ubicarlo exactamente en el mapa.
+              </p>
+            </div>
+          )}
+
           {/* Indicador de carga de geocodificación flotante */}
           {isGeocoding && (
             <div className="absolute top-3 left-3 bg-white/95 backdrop-blur shadow-md border border-slate-200 rounded-full px-3 py-1 text-[10px] font-bold text-slate-600 flex items-center gap-1.5 z-[1000] animate-pulse">
               <RefreshCw size={11} className="animate-spin text-cyan-500" />
-              <span>Sanitizando mapa de ruta...</span>
+              <span>Calculando rutas y coordenadas...</span>
             </div>
           )}
         </div>
