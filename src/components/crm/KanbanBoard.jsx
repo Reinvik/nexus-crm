@@ -95,32 +95,40 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
   };
 
   return (
-    <div className="space-y-6">
-      {/* Barra de Filtros */}
-      <div className="glass-panel p-4 rounded-2xl bg-white border border-slate-100 flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
+    <div className="space-y-3">
+      {/* Barra de Filtros Compacta */}
+      <div className="glass-panel py-1.5 px-3 rounded-xl bg-white border border-slate-100 flex flex-wrap gap-3 items-center justify-between shadow-sm text-xs">
         
-        {/* Buscador */}
-        <div className="relative w-full md:w-80">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar taller o comuna..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 bg-slate-50/50"
-          />
+        {/* Buscador y Botón Agregar (Grupo Izquierdo) */}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar taller o comuna..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-8 pr-3 py-1 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-slate-50/50 font-semibold"
+            />
+          </div>
+          <button
+            onClick={onAddNewLead}
+            className="flex items-center gap-1 px-3 py-1 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer shrink-0"
+          >
+            <Plus size={14} /> Agregar Lead
+          </button>
         </div>
 
-        {/* Dropdowns Filtros */}
-        <div className="flex flex-wrap w-full md:w-auto items-center gap-3">
+        {/* Dropdowns Filtros (Grupo Derecho) */}
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           
           {/* Comuna */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-500">
-            <Filter size={14} />
+          <div className="flex items-center gap-1 text-slate-400">
+            <Filter size={12} />
             <select
               value={communeFilter}
               onChange={(e) => setCommuneFilter(e.target.value)}
-              className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold"
+              className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold text-slate-700"
             >
               <option value="all">Todas las Comunas</option>
               {communes.filter(c => c !== 'all').map(commune => (
@@ -133,7 +141,7 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold text-slate-600"
+            className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold text-slate-600"
           >
             <option value="all">Todas las Prioridades</option>
             <option value="Alta">Prioridad Alta</option>
@@ -145,7 +153,7 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
           <select
             value={webFilter}
             onChange={(e) => setWebFilter(e.target.value)}
-            className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold text-slate-600"
+            className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold text-slate-600"
           >
             <option value="all">Todos los sitios</option>
             <option value="no_web">Sin Sitio Web (Oportunidad)</option>
@@ -156,26 +164,18 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
           <select
             value={weekendFilter}
             onChange={(e) => setWeekendFilter(e.target.value)}
-            className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold text-slate-600"
+            className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold text-slate-600"
           >
             <option value="all">Horario (Cualquiera)</option>
             <option value="open_weekends">Abre Fines de Semana</option>
             <option value="closed_weekends">Cerrado Fines de Semana</option>
           </select>
-
-          {/* Botón Nuevo Lead */}
-          <button
-            onClick={onAddNewLead}
-            className="flex items-center gap-1.5 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-cyan-500/10 cursor-pointer ml-auto md:ml-0"
-          >
-            <Plus size={16} /> Agregar Lead
-          </button>
         </div>
 
       </div>
 
       {/* Tablero Kanban Desplazable */}
-      <div className="flex gap-5 overflow-x-auto pb-6 pt-2 custom-scrollbar">
+      <div className="flex gap-4 overflow-x-auto pb-3 pt-1 custom-scrollbar">
         {STAGES.map(stage => {
           const stageLeads = filteredLeads.filter(l => l.stage === stage.id);
           const stageValue = stageLeads.reduce((sum, l) => sum + (Number(l.value) || 0), 0);
@@ -188,7 +188,7 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
               className="flex flex-col min-w-[285px] w-[285px] shrink-0 bg-slate-50 rounded-2xl border border-slate-200/50 p-3 shadow-sm transition-colors duration-200 kanban-column-height"
             >
               {/* Cabecera Columna */}
-              <div className={`p-3.5 rounded-xl border-t-4 ${stage.color} mb-3.5 flex flex-col gap-1.5 shadow-sm bg-white border border-slate-100`}>
+              <div className={`p-2.5 rounded-xl border-t-4 ${stage.color} mb-2 flex flex-col gap-1 shadow-sm bg-white border border-slate-100`}>
                 <div className="flex items-center justify-between gap-2">
                   <h4 className="text-[11px] font-black uppercase tracking-wider truncate mr-1" title={stage.name}>
                     {stage.name}
@@ -197,14 +197,14 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
                     {stageLeads.length}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold mt-1 pt-1.5 border-t border-slate-100">
+                <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold mt-1 pt-1 border-t border-slate-100">
                   <span>SaaS Garage</span>
                   <span className="text-slate-800 font-extrabold">${stageValue.toLocaleString('es-CL')}</span>
                 </div>
               </div>
 
               {/* Lista de Tarjetas */}
-              <div className="flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
+              <div className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
                 {stageLeads.slice(0, 50).map(lead => {
                   const web = lead.website ? lead.website.trim().toLowerCase() : '';
                   const hasNoWeb = !web || web === 'no tiene' || web === 'no';
@@ -216,7 +216,7 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
                       onDragStart={(e) => handleDragStart(e, lead.id)}
                       onClick={() => onOpenLeadModal(lead)}
                       className={`
-                        glass-panel p-3.5 rounded-xl bg-white border border-slate-100/80 shadow-sm cursor-grab active:cursor-grabbing hover:border-cyan-200/80 transition-all duration-200 relative group
+                        glass-panel p-2.5 rounded-xl bg-white border border-slate-100/80 shadow-sm cursor-grab active:cursor-grabbing hover:border-cyan-200/80 transition-all duration-200 relative group
                         ${draggedId === lead.id ? 'opacity-40 border-dashed border-cyan-300' : ''}
                       `}
                     >
@@ -246,17 +246,17 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
                       </div>
 
                       {/* Nombre Taller */}
-                      <h5 className="font-extrabold text-sm text-slate-800 leading-tight mt-2 tracking-tight group-hover:text-cyan-700 transition-colors truncate">
+                      <h5 className="font-extrabold text-xs text-slate-800 leading-tight mt-1.5 tracking-tight group-hover:text-cyan-700 transition-colors truncate">
                         {lead.name}
                       </h5>
 
                       {/* Info de Negocio */}
-                      <div className="mt-2 text-xs flex justify-between items-center text-slate-500">
-                        <span className="font-semibold">${(Number(lead.value) || 0).toLocaleString('es-CL')}</span>
+                      <div className="mt-1 text-xs flex justify-between items-center text-slate-500">
+                        <span className="font-semibold text-[11px]">${(Number(lead.value) || 0).toLocaleString('es-CL')}</span>
                         
                         {/* Prioridad */}
                         <div className="flex gap-0.5 items-center">
-                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
                             lead.priority === 'Alta' ? 'bg-amber-100 text-amber-800' : 
                             lead.priority === 'Media' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-700'
                           }`}>
@@ -266,11 +266,11 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
                       </div>
 
                       {/* Sitio Web y Dirección en la parte inferior */}
-                      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5">
+                      <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {hasNoWeb ? (
-                            <span className="text-[9px] font-extrabold bg-[#22c55e]/15 text-[#166534] px-1.5 py-0.5 rounded border border-[#22c55e]/30 flex items-center gap-0.5 select-none shrink-0">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse"></span>
+                            <span className="text-[8px] font-extrabold bg-[#22c55e]/15 text-[#166534] px-1.5 py-0.5 rounded border border-[#22c55e]/30 flex items-center gap-0.5 select-none shrink-0">
+                              <span className="w-1 h-1 rounded-full bg-[#22c55e] animate-pulse"></span>
                               SIN WEB
                             </span>
                           ) : (

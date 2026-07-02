@@ -167,7 +167,7 @@ export default function App() {
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         
         {/* Barra Superior (Header) */}
-        <header className="h-20 border-b border-slate-200/80 bg-white flex items-center justify-between px-6 lg:px-8 z-10 shadow-sm shrink-0">
+        <header className="h-14 border-b border-slate-200/80 bg-white flex items-center justify-between px-6 lg:px-8 z-10 shadow-sm shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -187,7 +187,7 @@ export default function App() {
         </header>
 
         {/* Contenido de la Vista Activa */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8 bg-[#f8fafc] custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-5 bg-[#f8fafc] custom-scrollbar">
           <div className={`${currentView === 'kanban' ? 'max-w-full' : 'max-w-7xl'} mx-auto`}>
             {loading ? (
               <div className="h-64 flex flex-col items-center justify-center">
