@@ -89,5 +89,5 @@
 
 /* Kanban column height constraints */
 .kanban-column-height {
-  height: calc(100vh - 280px);
+  height: calc(100vh - 175px);
 }
