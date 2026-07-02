@@ -8,6 +8,7 @@ import LeadModal from './components/crm/LeadModal';
 import BuyerPersonas from './components/crm/BuyerPersonas';
 import MentorshipPlaybook from './components/crm/MentorshipPlaybook';
 import SalesGuide from './components/crm/SalesGuide';
+import RoutingView from './components/crm/RoutingView';
 import { dbService } from './services/dbService';
 import { Menu, Calendar } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
@@ -139,6 +140,7 @@ export default function App() {
     switch (currentView) {
       case 'dashboard': return 'Resumen Comercial e Inteligencia de Ventas';
       case 'kanban': return 'Embudo de Ventas - Nexus Garage';
+      case 'routing': return 'Planificador de Ruta y Cobertura de Ventas';
       case 'hunter': return 'Nexus Hunter - Prospección Google Maps';
       case 'personas': return 'Perfiles de Clientes Ideales (Buyer Personas)';
       case 'playbook': return 'Playbook Comercial: Diagnósticos y Cierres';
@@ -188,7 +190,7 @@ export default function App() {
 
         {/* Contenido de la Vista Activa */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-5 bg-[#f8fafc] custom-scrollbar">
-          <div className={`${currentView === 'kanban' ? 'max-w-full' : 'max-w-7xl'} mx-auto`}>
+          <div className={`${(currentView === 'kanban' || currentView === 'routing') ? 'max-w-full' : 'max-w-7xl'} mx-auto`}>
             {loading ? (
               <div className="h-64 flex flex-col items-center justify-center">
                 <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -209,6 +211,9 @@ export default function App() {
                     }}
                     onAddNewLead={handleAddNewLead}
                   />
+                )}
+                {currentView === 'routing' && (
+                  <RoutingView leads={leads} />
                 )}
                 {currentView === 'hunter' && (
                   <NexusHunter onImportLeads={handleImportLeads} />

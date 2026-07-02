@@ -10,7 +10,8 @@ import {
   LogOut,
   Users,
   ScrollText,
-  PhoneCall
+  PhoneCall,
+  Navigation
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -19,6 +20,7 @@ export default function Sidebar({ currentView, setCurrentView, isOpen, setIsOpen
   const menuItems = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { id: 'kanban', name: 'Embudo de Ventas', icon: KanbanSquare },
+    { id: 'routing', name: 'Planificador de Ruta', icon: Navigation },
     { id: 'hunter', name: 'Nexus Hunter', icon: Map },
     { id: 'personas', name: 'Buyer Personas', icon: Users },
     { id: 'playbook', name: 'Playbook de Cierre', icon: ScrollText },
