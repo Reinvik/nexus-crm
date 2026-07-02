@@ -15,7 +15,8 @@ import {
   Play,
   RotateCcw,
   ChevronRight,
-  Flame
+  Flame,
+  Target
 } from 'lucide-react';
 import { dbService } from '../../services/dbService';
 import { geminiService } from '../../services/geminiService';
