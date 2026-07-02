@@ -80,14 +80,15 @@ export default function NexusHunter({ onImportLeads }) {
           const websiteRaw = websiteIdx !== -1 ? cleanCols[websiteIdx] || '' : '';
           const website = websiteRaw.toLowerCase().includes('no tiene') || !websiteRaw ? '' : websiteRaw;
           const communeVal = communeIdx !== -1 ? cleanCols[communeIdx] || 'Santiago' : 'Santiago';
-          const address = addressIdx !== -1 ? cleanCols[addressIdx] || `${name}, ${communeVal}` : `${name}, ${communeVal}`;
+          const cleanCommune = communeVal.split(',')[0].trim();
+          const address = addressIdx !== -1 ? cleanCols[addressIdx] || `${name}, ${cleanCommune}` : `${name}, ${cleanCommune}`;
 
           leads.push({
             id: `temp-${Date.now()}-${i}`,
             name,
             phone: phone || 'Sin teléfono',
             website: website,
-            commune: communeVal,
+            commune: cleanCommune,
             address,
             priority: 'Media',
             stage: 'lead',
