@@ -205,7 +205,7 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
 
               {/* Lista de Tarjetas */}
               <div className="flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
-                {stageLeads.map(lead => {
+                {stageLeads.slice(0, 50).map(lead => {
                   const web = lead.website ? lead.website.trim().toLowerCase() : '';
                   const hasNoWeb = !web || web === 'no tiene' || web === 'no';
                   
@@ -329,6 +329,12 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
                     </div>
                   );
                 })}
+
+                {stageLeads.length > 50 && (
+                  <div className="bg-slate-100/80 border border-slate-200/50 rounded-xl p-3 text-center text-[10px] text-slate-500 font-bold select-none mt-2">
+                    ⚡ Mostrando primeras 50 de {stageLeads.length} tarjetas. Usa los filtros de comuna o el buscador para ver más.
+                  </div>
+                )}
 
                 {stageLeads.length === 0 && (
                   <div className="border border-dashed border-slate-200 rounded-xl p-6 text-center text-slate-400 text-xs">
