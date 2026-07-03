@@ -119,8 +119,130 @@ const geocodeSingleLead = async (lead, cachedCoords) => {
   };
 };
 
+const normalizeText = (text) => {
+  if (!text) return '';
+  return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+};
+
+// Componente Interno para Selección Múltiple de Comunas
+function MultiSelectCommunes({ communes, selectedCommunes, onChange, leads }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getCount = (commune) => {
+    return leads.filter(l => l.commune === commune).length;
+  };
+
+  const filteredCommunes = communes
+    .filter(c => c !== 'all')
+    .filter(c => normalizeText(c).includes(normalizeText(search)));
+
+  const handleToggle = (commune) => {
+    if (selectedCommunes.includes(commune)) {
+      onChange(selectedCommunes.filter(c => c !== commune));
+    } else {
+      onChange([...selectedCommunes, commune]);
+    }
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold text-slate-700 flex items-center gap-1.5 cursor-pointer shadow-sm min-w-[150px] justify-between h-7"
+      >
+        <div className="flex items-center gap-1 min-w-0">
+          <Filter size={11} className="text-slate-400 shrink-0" />
+          <span className="truncate max-w-[120px]">
+            {selectedCommunes.length === 0 
+              ? 'Todas las Comunas' 
+              : selectedCommunes.length === 1 
+                ? selectedCommunes[0] 
+                : `${selectedCommunes.length} comunas`}
+          </span>
+        </div>
+        <span className="text-[8px] text-slate-400">▼</span>
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 mt-1 w-60 bg-white border border-slate-200 rounded-xl shadow-lg z-50 p-2 text-xs flex flex-col max-h-64">
+          <div className="relative mb-2 shrink-0">
+            <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar comuna..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-6 pr-2 py-0.5 border border-slate-200 rounded-lg text-[10px] focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold bg-slate-50/50"
+            />
+          </div>
+
+          <div className="flex justify-between items-center px-1 pb-1.5 border-b border-slate-100 mb-1.5 font-bold text-slate-500 shrink-0 select-none">
+            <button 
+              type="button" 
+              onClick={() => onChange([])}
+              className="hover:text-cyan-600 cursor-pointer"
+            >
+              Todas
+            </button>
+            {selectedCommunes.length > 0 && (
+              <button 
+                type="button" 
+                onClick={() => onChange([])}
+                className="hover:text-rose-500 cursor-pointer"
+              >
+                Limpiar ({selectedCommunes.length})
+              </button>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-0.5 custom-scrollbar pr-1">
+            {filteredCommunes.map(commune => {
+              const isChecked = selectedCommunes.includes(commune);
+              return (
+                <label 
+                  key={commune}
+                  className="flex items-center justify-between px-1.5 py-1 hover:bg-slate-50 rounded-lg cursor-pointer select-none transition-colors"
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => handleToggle(commune)}
+                      className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 w-3 h-3 cursor-pointer shrink-0"
+                    />
+                    <span className="font-semibold text-slate-700 truncate">{commune}</span>
+                  </div>
+                  <span className="text-[8px] bg-slate-100 text-slate-500 font-bold px-1 py-0.2 rounded-full shrink-0">
+                    {getCount(commune)}
+                  </span>
+                </label>
+              );
+            })}
+            {filteredCommunes.length === 0 && (
+              <p className="text-center text-slate-400 py-4 font-medium">No se encontraron comunas</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function RoutingView({ leads, onDeleteLead }) {
-  const [selectedCommune, setSelectedCommune] = useState('all');
+  const [selectedCommunes, setSelectedCommunes] = useState([]);
   const [selectedStage, setSelectedStage] = useState('all');
   const [selectedPriority, setSelectedPriority] = useState('all');
   const [routeItems, setRouteItems] = useState([]);
@@ -141,12 +263,15 @@ export default function RoutingView({ leads, onDeleteLead }) {
 
   // Filtrar los leads activos
   const filteredLeads = leads.filter(lead => {
-    const matchesCommune = selectedCommune === 'all' || lead.commune === selectedCommune;
+    const searchNormalized = normalizeText(searchTerm);
+    const matchesSearch = !searchTerm || 
+                          normalizeText(lead.name).includes(searchNormalized) || 
+                          normalizeText(lead.commune).includes(searchNormalized) ||
+                          normalizeText(lead.address).includes(searchNormalized);
+                          
+    const matchesCommune = selectedCommunes.length === 0 || selectedCommunes.includes(lead.commune);
     const matchesStage = selectedStage === 'all' || lead.stage === selectedStage;
     const matchesPriority = selectedPriority === 'all' || lead.priority === selectedPriority;
-    const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          lead.commune.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          lead.address.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCommune && matchesStage && matchesPriority && matchesSearch;
   });
 
@@ -162,8 +287,8 @@ export default function RoutingView({ leads, onDeleteLead }) {
       // Determinar qué leads geocodificar
       let leadsToProcess = [];
 
-      // Si hay comuna seleccionada, procesamos los talleres de esa comuna (máximo 40)
-      if (selectedCommune !== 'all') {
+      // Si hay alguna comuna seleccionada, procesamos los talleres de esa comuna (máximo 40)
+      if (selectedCommunes.length > 0) {
         leadsToProcess = [...filteredLeads.slice(0, 40)];
       }
 
@@ -197,7 +322,7 @@ export default function RoutingView({ leads, onDeleteLead }) {
     };
 
     geocodeFilteredLeads();
-  }, [selectedCommune, selectedStage, selectedPriority, searchTerm, leads, routeItems, focusedLead]);
+  }, [selectedCommunes, selectedStage, selectedPriority, searchTerm, leads, routeItems, focusedLead]);
 
   // Inicializar Mapa Leaflet
   useEffect(() => {
@@ -350,10 +475,10 @@ export default function RoutingView({ leads, onDeleteLead }) {
     }
 
     // Auto-ajustar vista del mapa si hay marcadores y estamos en una comuna específica
-    if (geocodedLeads.length > 0 && selectedCommune !== 'all') {
+    if (geocodedLeads.length > 0 && selectedCommunes.length > 0) {
       map.fitBounds(bounds, { padding: [40, 40] });
     }
-  }, [geocodedLeads, routeItems, focusedLead, selectedCommune]);
+  }, [geocodedLeads, routeItems, focusedLead, selectedCommunes]);
 
   // Enfocar un lead específico de la lista lateral en el mapa
   const handleFocusLead = async (lead) => {
@@ -451,22 +576,15 @@ export default function RoutingView({ leads, onDeleteLead }) {
         {/* selectores */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Comuna */}
-          <div className="flex items-center gap-1.5 text-slate-400">
-            <Filter size={12} />
-            <select
-              value={selectedCommune}
-              onChange={(e) => {
-                setSelectedCommune(e.target.value);
-                setFocusedLead(null); // Limpiar foco
-              }}
-              className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold text-slate-700"
-            >
-              <option value="all">Todas las Comunas (Ver Santiago Centro)</option>
-              {communes.filter(c => c !== 'all').map(commune => (
-                <option key={commune} value={commune}>{commune}</option>
-              ))}
-            </select>
-          </div>
+          <MultiSelectCommunes
+            communes={communes}
+            selectedCommunes={selectedCommunes}
+            onChange={(val) => {
+              setSelectedCommunes(val);
+              setFocusedLead(null); // Limpiar foco
+            }}
+            leads={leads}
+          />
 
           {/* Etapa */}
           <select
@@ -587,13 +705,13 @@ export default function RoutingView({ leads, onDeleteLead }) {
           <div ref={mapContainerRef} className="w-full h-full z-0" />
           
           {/* Overlay informativo cuando no hay comuna seleccionada */}
-          {selectedCommune === 'all' && !focusedLead && (
+          {selectedCommunes.length === 0 && !focusedLead && (
             <div className="absolute inset-x-0 bottom-6 mx-auto w-11/12 md:w-3/4 bg-slate-900/90 backdrop-blur text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-800 z-[1000] text-center space-y-1">
               <p className="text-xs font-black tracking-tight text-cyan-400 flex items-center justify-center gap-1.5">
                 <Locate size={14} className="animate-pulse" /> Vista de Santiago Centro
               </p>
               <p className="text-[10px] text-slate-300 leading-normal">
-                Para evitar saturación de pantalla, selecciona una **Comuna** en el filtro superior o haz clic en cualquier taller de la lista lateral para ubicarlo exactamente en el mapa.
+                Para evitar saturación de pantalla, selecciona una o más **Comunas** en el filtro superior o haz clic en cualquier taller de la lista lateral para ubicarlo exactamente en el mapa.
               </p>
             </div>
           )}
