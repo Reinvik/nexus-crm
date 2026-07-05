@@ -346,14 +346,39 @@ export const dbService = {
   async getLeads() {
     if (supabase) {
       try {
-        const { data, error } = await supabase
-          .from('crm_leads')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (!error) return data.map(mapDbToLead);
-        console.warn('Fallback a localStorage debido a error en Supabase:', error);
+        let allData = [];
+        let from = 0;
+        let to = 999;
+        let keepFetching = true;
+
+        while (keepFetching) {
+          const { data, error } = await supabase
+            .from('crm_leads')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(from, to);
+
+          if (error) {
+            console.warn('Error fetching leads range:', error);
+            throw error;
+          }
+
+          if (data && data.length > 0) {
+            allData = [...allData, ...data];
+            if (data.length < 1000) {
+              keepFetching = false;
+            } else {
+              from += 1000;
+              to += 1000;
+            }
+          } else {
+            keepFetching = false;
+          }
+        }
+
+        return allData.map(mapDbToLead);
       } catch (err) {
-        console.warn('Fallback a localStorage por excepción:', err);
+        console.warn('Fallback a localStorage debido a error en Supabase:', err);
       }
     }
     return JSON.parse(localStorage.getItem(LOCAL_LEADS_KEY) || '[]').map(mapDbToLead);
