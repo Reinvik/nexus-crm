@@ -559,7 +559,7 @@ export default function RoutingView({ leads, onDeleteLead }) {
   return (
     <div className="space-y-4">
       {/* Barra de Filtros de Routing */}
-      <div className="glass-panel py-2 px-4 rounded-xl bg-white border border-slate-100 flex flex-wrap gap-4 items-center justify-between shadow-sm text-xs">
+      <div className="glass-panel py-2 px-4 rounded-xl bg-white border border-slate-100 flex flex-wrap gap-4 items-center justify-between shadow-sm text-xs relative z-[1001]">
         
         {/* Buscador */}
         <div className="relative w-full md:w-64">

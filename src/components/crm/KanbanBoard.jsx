@@ -222,7 +222,7 @@ export default function KanbanBoard({ leads, onUpdateLead, onOpenLeadModal, onAd
   return (
     <div className="space-y-3">
       {/* Barra de Filtros Compacta */}
-      <div className="glass-panel py-1.5 px-3 rounded-xl bg-white border border-slate-100 flex flex-wrap gap-3 items-center justify-between shadow-sm text-xs">
+      <div className="glass-panel py-1.5 px-3 rounded-xl bg-white border border-slate-100 flex flex-wrap gap-3 items-center justify-between shadow-sm text-xs relative z-30">
         
         {/* Buscador y Botón Agregar (Grupo Izquierdo) */}
         <div className="flex items-center gap-2 w-full md:w-auto">
