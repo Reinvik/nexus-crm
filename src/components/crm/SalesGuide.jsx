@@ -629,7 +629,6 @@ export default function SalesGuide({ onLeadCreated }) {
                         <span className="font-mono">{demoVehiculo.vin.substring(0, 10)}...</span>
                       </div>
                     </div>
-
                     <div className="pt-2 border-t border-slate-200 space-y-2">
                       <span className="text-[10px] font-extrabold text-slate-700 block">Enviar pruebas al celular del dueño por WhatsApp:</span>
                       
@@ -642,7 +641,7 @@ export default function SalesGuide({ onLeadCreated }) {
                               return (cleaned.length === 9 && cleaned.startsWith('9')) ? '56' + cleaned : cleaned;
                             })()
                           }&text=${encodeURIComponent(
-                            `Hola don ${demoNombreDueno}, aquí tiene la cotización interactiva para su ${demoVehiculo.marca} de mantenimiento en Nexus Garage. Puede revisarla y aprobar los trabajos aquí: https://demo.smartlean.cl/cotizacion/12345`
+                            `Hola don ${demoNombreDueno}, aquí tiene la cotización interactiva para su ${demoVehiculo.marca} de mantenimiento en Nexus Garage. Puede revisarla y aprobar los trabajos aquí: https://nexusgarage.cl/?p=${demoPatente.toUpperCase() || 'CLJ39H'}`
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -664,7 +663,7 @@ export default function SalesGuide({ onLeadCreated }) {
                               return (cleaned.length === 9 && cleaned.startsWith('9')) ? '56' + cleaned : cleaned;
                             })()
                           }&text=${encodeURIComponent(
-                            `Hola don ${demoNombreDueno}, le notificamos que su ${demoVehiculo.marca} patente ${demoPatente} está listo para ser retirado en nuestro taller. Puede ver el detalle de los repuestos cambiados y su garantía aquí: https://demo.smartlean.cl/entrega/12345`
+                            `Hola don ${demoNombreDueno}, le notificamos que su ${demoVehiculo.marca} patente ${demoPatente} está listo para ser retirado en nuestro taller. Puede ver el detalle de los repuestos cambiados y su garantía aquí: https://nexusgarage.cl/?p=${demoPatente.toUpperCase() || 'CLJ39H'}&v=ingreso`
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
