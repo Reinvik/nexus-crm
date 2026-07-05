@@ -31,6 +31,7 @@ export default function SalesGuide({ onLeadCreated }) {
   // Estados para la Demo en Vivo de 3 minutos (Fase 3)
   const [demoPatente, setDemoPatente] = useState('');
   const [demoCelular, setDemoCelular] = useState('');
+  const [demoNombreDueno, setDemoNombreDueno] = useState('Marcelo');
   const [demoCargando, setDemoCargando] = useState(false);
   const [demoVehiculo, setDemoVehiculo] = useState(null);
   const [demoEnviadoCotizacion, setDemoEnviadoCotizacion] = useState(false);
@@ -521,11 +522,11 @@ export default function SalesGuide({ onLeadCreated }) {
                 </p>
               </div>
 
-              {/* Simulador Interactivo de Consulta de Patente */}
+               {/* Simulador Interactivo de Consulta de Patente */}
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
                 <span className="text-[10px] font-black text-slate-500 tracking-wider block">Simulador de Ingreso en Taller (Obtención de Datos en 3s)</span>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-semibold">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-semibold">
                   <div>
                     <label className="text-[10px] font-bold text-slate-600 block mb-1">Patente del Dueño (Ej: ABCD12 o AB-CD-12)</label>
                     <input 
@@ -534,6 +535,16 @@ export default function SalesGuide({ onLeadCreated }) {
                       onChange={(e) => setDemoPatente(e.target.value.toUpperCase())}
                       placeholder="Ingrese patente..." 
                       className="w-full bg-white border rounded-lg p-2 font-bold uppercase placeholder-slate-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-1">Nombre del Dueño (Personaliza WhatsApp)</label>
+                    <input 
+                      type="text" 
+                      value={demoNombreDueno}
+                      onChange={(e) => setDemoNombreDueno(e.target.value)}
+                      placeholder="Ej: Marcelo, Ariel, Hugo..." 
+                      className="w-full bg-white border rounded-lg p-2 font-bold placeholder-slate-400"
                     />
                   </div>
                   <div>
@@ -625,8 +636,13 @@ export default function SalesGuide({ onLeadCreated }) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {/* Botón 1: Enviar Cotización */}
                         <a
-                          href={`https://api.whatsapp.com/send?phone=${demoCelular.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(
-                            `Hola don Marcelo, aquí tiene la cotización interactiva para su ${demoVehiculo.marca} de mantenimiento en Nexus Garage. Puede revisarla y aprobar los trabajos aquí: https://demo.smartlean.cl/cotizacion/12345`
+                          href={`https://api.whatsapp.com/send?phone=${
+                            (() => {
+                              const cleaned = demoCelular.replace(/[^0-9]/g, '');
+                              return (cleaned.length === 9 && cleaned.startsWith('9')) ? '56' + cleaned : cleaned;
+                            })()
+                          }&text=${encodeURIComponent(
+                            `Hola don ${demoNombreDueno}, aquí tiene la cotización interactiva para su ${demoVehiculo.marca} de mantenimiento en Nexus Garage. Puede revisarla y aprobar los trabajos aquí: https://demo.smartlean.cl/cotizacion/12345`
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -642,8 +658,13 @@ export default function SalesGuide({ onLeadCreated }) {
 
                         {/* Botón 2: Enviar Vehículo Listo */}
                         <a
-                          href={`https://api.whatsapp.com/send?phone=${demoCelular.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(
-                            `Hola don Marcelo, le notificamos que su ${demoVehiculo.marca} patente ${demoPatente} está listo para ser retirado en nuestro taller. Puede ver el detalle de los repuestos cambiados y su garantía aquí: https://demo.smartlean.cl/entrega/12345`
+                          href={`https://api.whatsapp.com/send?phone=${
+                            (() => {
+                              const cleaned = demoCelular.replace(/[^0-9]/g, '');
+                              return (cleaned.length === 9 && cleaned.startsWith('9')) ? '56' + cleaned : cleaned;
+                            })()
+                          }&text=${encodeURIComponent(
+                            `Hola don ${demoNombreDueno}, le notificamos que su ${demoVehiculo.marca} patente ${demoPatente} está listo para ser retirado en nuestro taller. Puede ver el detalle de los repuestos cambiados y su garantía aquí: https://demo.smartlean.cl/entrega/12345`
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
