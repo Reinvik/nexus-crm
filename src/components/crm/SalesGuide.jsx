@@ -44,21 +44,26 @@ export default function SalesGuide({ onLeadCreated }) {
   const [tallerNotes, setTallerNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Estados del mini-simulador de fugas integrado
+  // Estados del mini-simulador de fugas integrado (alineados con Playbook)
   const [autosMes, setAutosMes] = useState(60);
   const [ticketPromedio, setTicketPromedio] = useState(120000);
   const [tieneWeb, setTieneWeb] = useState('no');
   const [fugaBodega, setFugaBodega] = useState(180000);
+  const [tasaRechazo, setTasaRechazo] = useState(40);
+  const [costoReclamos, setCostoReclamos] = useState(120000);
+  const costoLicenciaNexus = 45000;
 
   // Estados de los sliders de aptitud (Sara Alonso)
   const [commitment, setCommitment] = useState(3);
   const [digital, setDigital] = useState(3);
   const [leadership, setLeadership] = useState(3);
 
-  // Cálculos rápidos de fuga
-  const perdidaRechazo = Math.round((autosMes / 0.6 - autosMes) * 0.3 * ticketPromedio);
-  const perdidaWeb = tieneWeb === 'no' ? Math.round((autosMes / 0.6) * 0.3 * ticketPromedio) : 0;
-  const perdidaTotal = fugaBodega + perdidaRechazo + perdidaWeb;
+  // Cálculos rápidos de fuga (fórmulas idénticas al Playbook)
+  const consultasTotales = autosMes / (1 - tasaRechazo / 100);
+  const perdidaRechazo = Math.round((consultasTotales - autosMes) * 0.3 * ticketPromedio);
+  const perdidaWeb = tieneWeb === 'no' ? Math.round(consultasTotales * 0.3 * ticketPromedio) : 0;
+  const perdidaTotal = fugaBodega + perdidaRechazo + perdidaWeb + costoReclamos;
+  const retornoInversion = Math.round(perdidaTotal / costoLicenciaNexus);
 
   // Handler para guardar Lead directamente en Supabase/LocalStorage
   const handleRegisterLead = async (e) => {
@@ -70,12 +75,15 @@ export default function SalesGuide({ onLeadCreated }) {
 
     setIsSaving(true);
     try {
+      // Asignar stage según fase alcanzada en el wizard
+      const stageByPhase = currentStep >= 4 ? 'demo' : currentStep >= 3 ? 'contacto' : 'lead';
+
       const newLead = {
         name: tallerName,
         phone: tallerPhone,
         commune: tallerCommune,
         address: tallerAddress,
-        stage: 'lead',
+        stage: stageByPhase,
         priority: 'Media',
         value: Number(perdidaTotal) > 0 ? Math.round(perdidaTotal * 0.1) : 45000, // 10% de la fuga como valor potencial o min $45.000
         pain: dolorSeleccionado === 'bodega' ? 'Descontrol en bodega y repuestos perdidos' :
@@ -109,7 +117,7 @@ export default function SalesGuide({ onLeadCreated }) {
       setCurrentStep(1);
       setAperturaRuta(null);
       setDolorSeleccionado(null);
-      setAptitudSeleccionada(null);
+      setAptitudeSeleccionada(null);
 
       if (onLeadCreated) {
         onLeadCreated(saved);
@@ -855,6 +863,29 @@ export default function SalesGuide({ onLeadCreated }) {
                       className="w-full bg-slate-50 border rounded-lg p-2 font-bold"
                     />
                   </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-500 block mb-1">Costo de reclamos estéticos/garantías al mes (CLP)</label>
+                    <input 
+                      type="number" 
+                      value={costoReclamos} 
+                      onChange={(e) => setCostoReclamos(Number(e.target.value))}
+                      className="w-full bg-slate-50 border rounded-lg p-2 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-500 block mb-1">Tasa de rechazo de presupuestos (%)</label>
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="range" 
+                        min="5" 
+                        max="80" 
+                        value={tasaRechazo} 
+                        onChange={(e) => setTasaRechazo(Number(e.target.value))}
+                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                      />
+                      <span className="text-xs font-black text-slate-800 whitespace-nowrap">{tasaRechazo}%</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Resultado de Fugas en Vivo */}
@@ -862,10 +893,11 @@ export default function SalesGuide({ onLeadCreated }) {
                   <div className="space-y-1">
                     <span className="text-[10px] font-black text-rose-800 uppercase block tracking-wider">💸 Pérdida Total Estimada del Taller:</span>
                     <span className="text-xl font-black text-rose-600">${perdidaTotal.toLocaleString('es-CL')} CLP / mes</span>
+                    <span className="text-[9px] text-slate-500 block font-bold">o unos ${(perdidaTotal * 12).toLocaleString('es-CL')} al año.</span>
                   </div>
                   <div className="text-[10px] text-slate-600 font-bold bg-white px-3 py-2 rounded-lg border border-slate-200 leading-normal">
-                    Nexus cuesta <span className="text-slate-900 font-extrabold">$45.000 CLP / mes</span>.<br />
-                    Recuperando el 10% de la fuga, el software se paga solo y genera ganancias.
+                    Nexus cuesta <span className="text-slate-900 font-extrabold">${costoLicenciaNexus.toLocaleString('es-CL')} CLP / mes</span>.<br />
+                    Se paga solo <span className="text-emerald-700 font-extrabold">{retornoInversion}x al mes</span> recuperando las fugas.
                   </div>
                 </div>
               </div>
@@ -908,20 +940,16 @@ export default function SalesGuide({ onLeadCreated }) {
                     </div>
                     <div>
                       <label className="text-[10px] font-black text-slate-500 block mb-1">Comuna</label>
-                      <select 
-                        value={tallerCommune} 
-                        onChange={(e) => setTallerCommune(e.target.value)}
-                        className="w-full bg-slate-50 border rounded-lg p-2 font-bold focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                      >
-                        <option value="Santiago (Centro)">Santiago (Centro)</option>
-                        <option value="Maipú">Maipú</option>
-                        <option value="La Florida">La Florida</option>
-                        <option value="Providencia">Providencia</option>
-                        <option value="Las Condes">Las Condes</option>
-                        <option value="San Miguel">San Miguel</option>
-                        <option value="Ñuñoa">Ñuñoa</option>
-                        <option value="Cerrillos">Cerrillos</option>
-                      </select>
+                      <div className="relative">
+                        <MapPin size={14} className="absolute left-3 top-3 text-slate-400" />
+                        <input 
+                          type="text" 
+                          placeholder="Ej. Macul, Maipú, Santiago..."
+                          value={tallerCommune} 
+                          onChange={(e) => setTallerCommune(e.target.value)}
+                          className="w-full pl-9 pr-3 py-2 bg-slate-50 border rounded-lg font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="text-[10px] font-black text-slate-500 block mb-1">Dirección Física</label>

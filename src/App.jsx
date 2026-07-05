@@ -184,7 +184,7 @@ export default function App() {
 
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200/50 px-3.5 py-1.5 rounded-full select-none">
             <Calendar size={14} className="text-cyan-500" />
-            <span>2026-06-28</span>
+            <span>{new Date().toISOString().split('T')[0]}</span>
           </div>
         </header>
 

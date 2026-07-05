@@ -315,7 +315,7 @@ export default function MentorshipPlaybook() {
                 <div className="text-xs text-cyan-700 font-semibold bg-cyan-50/60 p-3 rounded-lg border border-cyan-100 flex items-start gap-2">
                   <ArrowRight size={14} className="shrink-0 mt-0.5" />
                   <p>
-                    <span className="font-extrabold">Rebote Socrático:</span> "Entiendo, maestro. ¿Y usted no cree que esa lentitud se deba a que no tienen un tablero visual claro de sus tareas y pasan tiempo esperando que les traigan los repuestos correctos de bodega?"
+                    <span className="font-extrabold">Rebote Socrático:</span> "Entiendo [Nombre del dueño]. ¿Y usted no cree que esa lentitud se deba a que no tienen un tablero visual claro de sus tareas y pasan tiempo esperando que les traigan los repuestos correctos de bodega?"
                   </p>
                 </div>
               </div>
@@ -784,10 +784,10 @@ export default function MentorshipPlaybook() {
                 <div className="p-4 bg-amber-500/5 rounded-xl border border-amber-500/10 space-y-2 relative">
                   <span className="text-[10px] font-black text-amber-800 uppercase block">Paso 1: La Advertencia Socrática (Descalificación Inicial)</span>
                   <p className="text-xs text-slate-700 italic font-semibold leading-relaxed">
-                    "Mire don Marcelo, nuestro software Nexus Garage es excelente y frena el 100% de las pérdidas en repuestos, pero requiere un cambio: sus maestros deben marcar la entrada y salida de bodega en la Tablet. Si usted no está dispuesto a exigir este orden mínimo, no nos contrate. Esto no es para todos los talleres. ¿Usted cree que está listo para comprometerse a este cambio operativo, o prefiere seguir con sus fugas actuales?"
+                    "Mire don [Nombre del dueño], nuestro software Nexus Garage es excelente y frena el 100% de las pérdidas en repuestos, pero requiere un cambio: sus maestros deben marcar la entrada y salida de bodega en la Tablet. Si usted no está dispuesto a exigir este orden mínimo, no nos contrate. Esto no es para todos los talleres. ¿Usted cree que está listo para comprometerse a este cambio operativo, o prefiere seguir con sus fugas actuales?"
                   </p>
                   <button
-                    onClick={() => handleCopy("Mire don Marcelo, nuestro software Nexus Garage es excelente y frena el 100% de las pérdidas en repuestos, pero requiere un cambio: sus maestros deben marcar la entrada y salida de bodega en la Tablet. Si usted no está dispuesto a exigir este orden mínimo, no nos contrate. Esto no es para todos los talleres. ¿Usted cree que está listo para comprometerse a este cambio operativo, o prefiere seguir con sus fugas actuales?", 100)}
+                    onClick={() => handleCopy("Mire don [Nombre del dueño], nuestro software Nexus Garage es excelente y frena el 100% de las pérdidas en repuestos, pero requiere un cambio: sus maestros deben marcar la entrada y salida de bodega en la Tablet. Si usted no está dispuesto a exigir este orden mínimo, no nos contrate. Esto no es para todos los talleres. ¿Usted cree que está listo para comprometerse a este cambio operativo, o prefiere seguir con sus fugas actuales?", 100)}
                     className="absolute top-2 right-2 px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-750 rounded-lg text-[9px] font-black border border-slate-200 cursor-pointer shadow-sm"
                   >
                     {copiedIndex === 100 ? 'Copiado!' : 'Copiar'}
