@@ -186,7 +186,7 @@ export default function LeadModal({ lead, onClose, onSaveLead, onDeleteLead }) {
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-55 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-4xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-2xl w-full max-w-6xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Cabecera */}
         <div className="h-16 px-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
@@ -206,10 +206,10 @@ export default function LeadModal({ lead, onClose, onSaveLead, onDeleteLead }) {
         </div>
 
         {/* Contenido (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* Columna Izquierda: Formulario e Información General */}
-          <div className="md:col-span-2 space-y-4">
+          <div className="lg:col-span-7 space-y-4">
             <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">Datos Básicos</h4>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -440,7 +440,7 @@ export default function LeadModal({ lead, onClose, onSaveLead, onDeleteLead }) {
           </div>
 
           {/* Columna Derecha: Configuración de Venta y Seguimiento */}
-          <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-5 space-y-4">
+          <div className="lg:col-span-5 bg-slate-50/50 border border-slate-100 rounded-2xl p-5 space-y-4">
             <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">Estado de la Venta</h4>
             
             {/* Etapa */}
