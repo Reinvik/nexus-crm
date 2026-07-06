@@ -522,5 +522,40 @@ export const dbService = {
     }
     localStorage.setItem(LOCAL_ACTIVITIES_KEY, JSON.stringify(activities));
     return finalActivity;
+  },
+
+  // === GESTIÓN DE PATIO DE CAMIONES ===
+  async getTruckTickets() {
+    // Retorna los tickets del patio guardados localmente
+    const tickets = JSON.parse(localStorage.getItem('nexus_crm_truck_tickets') || '[]');
+    return tickets.sort((a, b) => new Date(b.entryTime) - new Date(a.entryTime));
+  },
+
+  async saveTruckTicket(ticket) {
+    const tickets = JSON.parse(localStorage.getItem('nexus_crm_truck_tickets') || '[]');
+    const isNew = !ticket.id;
+    const finalTicket = {
+      ...ticket,
+      id: ticket.id || `truck-${Date.now()}`,
+      entryTime: ticket.entryTime || new Date().toISOString()
+    };
+
+    if (isNew) {
+      tickets.push(finalTicket);
+    } else {
+      const idx = tickets.findIndex(t => t.id === finalTicket.id);
+      if (idx !== -1) {
+        tickets[idx] = finalTicket;
+      }
+    }
+    localStorage.setItem('nexus_crm_truck_tickets', JSON.stringify(tickets));
+    return finalTicket;
+  },
+
+  async deleteTruckTicket(id) {
+    const tickets = JSON.parse(localStorage.getItem('nexus_crm_truck_tickets') || '[]');
+    const filtered = tickets.filter(t => t.id !== id);
+    localStorage.setItem('nexus_crm_truck_tickets', JSON.stringify(filtered));
+    return true;
   }
 };
