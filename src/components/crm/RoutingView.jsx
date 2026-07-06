@@ -245,11 +245,111 @@ export default function RoutingView({ leads, onDeleteLead }) {
   const [selectedCommunes, setSelectedCommunes] = useState([]);
   const [selectedStage, setSelectedStage] = useState('all');
   const [selectedPriority, setSelectedPriority] = useState('all');
-  const [routeItems, setRouteItems] = useState([]);
+  
+  // Estados para planificación semanal y plantillas
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const currentDayIndex = new Date().getDay();
+    return days[currentDayIndex] || 'Lunes';
+  });
+
+  const [routesByDay, setRoutesByDay] = useState(() => {
+    const saved = localStorage.getItem('nexus_crm_routes_by_day');
+    return saved ? JSON.parse(saved) : {
+      'Lunes': [], 'Martes': [], 'Miércoles': [], 'Jueves': [], 'Viernes': [], 'Sábado': [], 'Domingo': []
+    };
+  });
+
+  const [routeItems, setRouteItems] = useState(() => {
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const currentDayIndex = new Date().getDay();
+    const todayStr = days[currentDayIndex] || 'Lunes';
+    
+    const saved = localStorage.getItem('nexus_crm_routes_by_day');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return parsed[todayStr] || [];
+    }
+    return [];
+  });
+
+  const [routeTemplates, setRouteTemplates] = useState(() => {
+    const saved = localStorage.getItem('nexus_crm_route_templates');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [showTemplates, setShowTemplates] = useState(false);
+
   const [geocodedLeads, setGeocodedLeads] = useState([]);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [focusedLead, setFocusedLead] = useState(null);
+
+  // Cambiar de día guardando la ruta actual
+  const handleDayChange = (newDay) => {
+    const updatedRoutes = {
+      ...routesByDay,
+      [selectedDay]: routeItems
+    };
+    setRoutesByDay(updatedRoutes);
+    localStorage.setItem('nexus_crm_routes_by_day', JSON.stringify(updatedRoutes));
+    setSelectedDay(newDay);
+    setRouteItems(updatedRoutes[newDay] || []);
+  };
+
+  // Efecto para autoguardar routeItems en el día seleccionado
+  useEffect(() => {
+    if (selectedDay) {
+      setRoutesByDay(prev => {
+        const updated = { ...prev, [selectedDay]: routeItems };
+        localStorage.setItem('nexus_crm_routes_by_day', JSON.stringify(updated));
+        return updated;
+      });
+    }
+  }, [routeItems, selectedDay]);
+
+  const saveAsTemplate = () => {
+    if (!newTemplateName.trim()) return;
+    if (routeItems.length === 0) {
+      alert('No puedes guardar una ruta vacía como plantilla.');
+      return;
+    }
+    
+    const newTemplate = {
+      id: crypto.randomUUID(),
+      name: newTemplateName.trim(),
+      items: routeItems,
+      created_at: new Date().toISOString()
+    };
+
+    const updated = [newTemplate, ...routeTemplates];
+    setRouteTemplates(updated);
+    localStorage.setItem('nexus_crm_route_templates', JSON.stringify(updated));
+    setNewTemplateName('');
+    alert(`Plantilla "${newTemplate.name}" guardada con éxito.`);
+  };
+
+  const loadTemplate = (template) => {
+    if (confirm(`¿Deseas cargar la plantilla "${template.name}"? Esto reemplazará tu ruta actual de los ${selectedDay}.`)) {
+      setRouteItems(template.items);
+      setShowTemplates(false);
+    }
+  };
+
+  const deleteTemplate = (id, name) => {
+    if (confirm(`¿Deseas eliminar la plantilla "${name}"?`)) {
+      const updated = routeTemplates.filter(t => t.id !== id);
+      setRouteTemplates(updated);
+      localStorage.setItem('nexus_crm_route_templates', JSON.stringify(updated));
+    }
+  };
+
+  const clearCurrentRoute = () => {
+    if (confirm(`¿Seguro que deseas vaciar el itinerario de los ${selectedDay}?`)) {
+      setRouteItems([]);
+    }
+  };
 
   // Refs de Leaflet
   const mapRef = useRef(null);
@@ -729,11 +829,94 @@ export default function RoutingView({ leads, onDeleteLead }) {
         <div className="lg:col-span-1 flex flex-col bg-white border border-slate-200/60 rounded-2xl shadow-sm overflow-hidden h-full">
           <div className="bg-cyan-500 border-b border-cyan-600 p-3 text-white flex justify-between items-center shrink-0">
             <h4 className="font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-              <Navigation size={13} className="animate-pulse" /> Mi Itinerario de Visitas
+              <Navigation size={13} className="animate-pulse" /> Mi Itinerario
             </h4>
-            <span className="text-[10px] bg-white/20 text-white font-extrabold px-2 py-0.5 rounded-full">
-              {routeItems.length}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setShowTemplates(!showTemplates)}
+                className="text-[9px] font-black uppercase tracking-wider bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded transition-all cursor-pointer"
+                title="Plantillas y Rutas Guardadas"
+              >
+                📁 Plantillas
+              </button>
+              <span className="text-[10px] bg-white/20 text-white font-extrabold px-2 py-0.5 rounded-full">
+                {routeItems.length}
+              </span>
+            </div>
+          </div>
+
+          {/* Sub-Panel de Configuración de Día de la Semana y Autoguardado */}
+          <div className="bg-slate-50 border-b border-slate-200/80 p-2.5 space-y-2 shrink-0 text-xs">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Planificar Día:</span>
+              <select
+                value={selectedDay}
+                onChange={(e) => handleDayChange(e.target.value)}
+                className="bg-white border border-slate-200 rounded-lg px-2 py-0.5 text-[11px] font-black text-cyan-600 focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer h-6"
+              >
+                {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Modal/Dropdown interno de Plantillas */}
+            {showTemplates && (
+              <div className="bg-white border border-slate-200 rounded-xl p-2.5 space-y-2.5 shadow-inner">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-800 uppercase tracking-wider">Plantillas de Ruta</span>
+                  <button 
+                    onClick={() => setShowTemplates(false)}
+                    className="text-[10px] text-slate-400 hover:text-slate-600 font-bold"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+                
+                {/* Formulario para guardar plantilla */}
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="Nombre de plantilla... (ej: Ruta Sur)"
+                    value={newTemplateName}
+                    onChange={(e) => setNewTemplateName(e.target.value)}
+                    className="flex-1 px-2 py-0.5 border border-slate-200 rounded text-[10px] focus:outline-none focus:ring-1 focus:ring-cyan-500 font-semibold bg-slate-50/50"
+                  />
+                  <button
+                    onClick={saveAsTemplate}
+                    className="px-2.5 py-0.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded text-[10px] font-black transition-all cursor-pointer"
+                  >
+                    Guardar
+                  </button>
+                </div>
+
+                {/* Listado de plantillas */}
+                <div className="space-y-1 max-h-24 overflow-y-auto custom-scrollbar">
+                  {routeTemplates.map(tpl => (
+                    <div key={tpl.id} className="flex items-center justify-between p-1.5 hover:bg-slate-50 rounded border border-slate-100 text-[10px] font-semibold text-slate-700">
+                      <span className="truncate pr-2">{tpl.name} ({tpl.items.length} paradas)</span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => loadTemplate(tpl)}
+                          className="px-1.5 py-0.5 bg-slate-100 hover:bg-cyan-500 hover:text-white rounded text-[9px] font-bold cursor-pointer transition-all"
+                        >
+                          Cargar
+                        </button>
+                        <button
+                          onClick={() => deleteTemplate(tpl.id, tpl.name)}
+                          className="p-0.5 text-rose-500 hover:bg-rose-50 rounded cursor-pointer"
+                        >
+                          <Trash2 size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {routeTemplates.length === 0 && (
+                    <p className="text-center text-slate-400 text-[9px] py-2">No tienes plantillas guardadas.</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Lista Secuencial del Itinerario */}
@@ -789,7 +972,7 @@ export default function RoutingView({ leads, onDeleteLead }) {
                 <Map size={24} className="mx-auto text-slate-200 animate-bounce" />
                 <p>Tu ruta está vacía.</p>
                 <p className="text-[9px] text-slate-400 px-4 leading-normal">
-                  Haz clic en el botón <b class="text-cyan-500">+</b> del listado o en los pines del mapa para planificar tus visitas de hoy.
+                  Haz clic en el botón <b className="text-cyan-500">+</b> del listado o en los pines del mapa para planificar tus visitas para el **{selectedDay}**.
                 </p>
               </div>
             )}
@@ -797,20 +980,31 @@ export default function RoutingView({ leads, onDeleteLead }) {
 
           {/* Botones de Navegación GPS (Footer) */}
           <div className="bg-slate-50 border-t border-slate-200/80 p-3 space-y-2 shrink-0">
-            <a
-              href={getGoogleMapsRouteLink()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`w-full py-2 px-3 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer ${
-                routeItems.length === 0 
-                  ? 'bg-slate-300 shadow-none pointer-events-none' 
-                  : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10'
-              }`}
-            >
-              <ExternalLink size={13} /> Abrir GPS (Google Maps)
-            </a>
+            <div className="flex gap-2">
+              <a
+                href={getGoogleMapsRouteLink()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex-1 py-2 px-3 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer ${
+                  routeItems.length === 0 
+                    ? 'bg-slate-300 shadow-none pointer-events-none' 
+                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10'
+                }`}
+              >
+                <ExternalLink size={13} /> Abrir GPS (Google Maps)
+              </a>
+              {routeItems.length > 0 && (
+                <button
+                  onClick={clearCurrentRoute}
+                  className="px-3 py-2 border border-slate-200 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 rounded-xl text-slate-500 transition-all cursor-pointer"
+                  title="Vaciar itinerario de hoy"
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
+            </div>
             <p className="text-[8px] text-slate-400 text-center leading-normal">
-              Abre el itinerario ordenado en tu teléfono móvil para navegar secuencialmente con Google Maps GPS en terreno.
+              Abre el itinerario ordenado del **{selectedDay}** en tu teléfono móvil para navegar secuencialmente con Google Maps GPS en terreno.
             </p>
           </div>
 
