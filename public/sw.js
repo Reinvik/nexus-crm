@@ -34,6 +34,11 @@ self.addEventListener('activate', (event) => {
 
 // Estrategia Network-First con fallback a Caché
 self.addEventListener('fetch', (event) => {
+  // Evitar interceptar en entorno de desarrollo local (localhost / 127.0.0.1)
+  if (event.request.url.includes('localhost') || event.request.url.includes('127.0.0.1')) {
+    return;
+  }
+
   // Evitar interceptar llamadas a Supabase y Gemini APIs
   if (event.request.url.includes('supabase.co') || event.request.url.includes('googleapis.com')) {
     return;
