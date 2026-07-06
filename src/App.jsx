@@ -9,7 +9,6 @@ import BuyerPersonas from './components/crm/BuyerPersonas';
 import MentorshipPlaybook from './components/crm/MentorshipPlaybook';
 import SalesGuide from './components/crm/SalesGuide';
 import RoutingView from './components/crm/RoutingView';
-import TruckPatioView from './components/crm/TruckPatioView';
 import { dbService } from './services/dbService';
 import { Menu, Calendar } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
@@ -146,7 +145,6 @@ export default function App() {
       case 'personas': return 'Perfiles de Clientes Ideales (Buyer Personas)';
       case 'playbook': return 'Playbook Comercial: Diagnósticos y Cierres';
       case 'sales-guide': return 'Asistente de Ventas en Vivo';
-      case 'trucks': return 'Control y Gestión de Patio de Camiones';
       case 'settings': return 'Configuración de Sistema';
       default: return 'Nexus CRM';
     }
@@ -233,9 +231,6 @@ export default function App() {
                       setLeads(prev => [newLead, ...prev]);
                     }} 
                   />
-                )}
-                {currentView === 'trucks' && (
-                  <TruckPatioView />
                 )}
                 {currentView === 'settings' && (
                   <SettingsView />

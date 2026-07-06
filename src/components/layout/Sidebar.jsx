@@ -11,8 +11,7 @@ import {
   Users, 
   ScrollText, 
   PhoneCall, 
-  Navigation,
-  Truck
+  Navigation
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -26,7 +25,6 @@ export default function Sidebar({ currentView, setCurrentView, isOpen, setIsOpen
     { id: 'personas', name: 'Buyer Personas', icon: Users },
     { id: 'playbook', name: 'Playbook de Cierre', icon: ScrollText },
     { id: 'sales-guide', name: 'Asistente de Ventas', icon: PhoneCall },
-    { id: 'trucks', name: 'Control de Patio', icon: Truck },
     { id: 'settings', name: 'Configuración', icon: Settings },
   ];
 
