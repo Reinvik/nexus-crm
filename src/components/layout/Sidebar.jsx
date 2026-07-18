@@ -59,8 +59,8 @@ export default function Sidebar({ currentView, setCurrentView, isOpen, setIsOpen
           {/* Header de Marca Smartlean */}
           <div className="p-6 pb-4 flex items-center justify-between">
             <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setCurrentView('dashboard')}>
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center text-white shadow-[0_4px_14px_rgba(6,182,212,0.35)] transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105">
-                <TrendingUp size={20} className="font-black animate-pulse" />
+              <div className="w-9 h-9 rounded-xl bg-[#00d2ff]/10 border border-[#00d2ff]/30 flex items-center justify-center text-[#00d2ff] shadow-[0_0_15px_rgba(0,210,255,0.25)] transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105">
+                <TrendingUp size={20} className="font-black animate-pulse text-[#00d2ff] drop-shadow-[0_0_8px_#00d2ff]" />
               </div>
               <div className="flex flex-col">
                 <h1 className="font-extrabold text-[19px] text-white tracking-tight leading-none drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">

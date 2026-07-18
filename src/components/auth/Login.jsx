@@ -57,8 +57,8 @@ export default function Login() {
         {/* Logo Header Smartlean */}
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center text-white shadow-[0_4px_14px_rgba(6,182,212,0.35)]">
-              <TrendingUp size={20} className="font-black animate-pulse" />
+            <div className="w-10 h-10 rounded-xl bg-[#00d2ff]/10 border border-[#00d2ff]/30 flex items-center justify-center text-[#00d2ff] shadow-[0_0_15px_rgba(0,210,255,0.25)]">
+              <TrendingUp size={22} className="font-black animate-pulse text-[#00d2ff] drop-shadow-[0_0_8px_#00d2ff]" />
             </div>
             <div>
               <span className="text-xl font-extrabold tracking-tight text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
