@@ -557,5 +557,122 @@ export const dbService = {
     const filtered = tickets.filter(t => t.id !== id);
     localStorage.setItem('nexus_crm_truck_tickets', JSON.stringify(filtered));
     return true;
+  },
+
+  // === GESTIÓN DE RUTAS (PERSISTENCIA COMPARTIDA EN BD) ===
+  async getRoutes() {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('crm_routes')
+          .select('*');
+        if (!error) return data;
+        console.warn('Fallback a localStorage para obtener rutas por error:', error);
+      } catch (err) {
+        console.warn('Fallback a localStorage para obtener rutas por excepción:', err);
+      }
+    }
+    // Fallback local
+    const savedDays = JSON.parse(localStorage.getItem('nexus_crm_routes_by_day') || '{}');
+    const savedTemplates = JSON.parse(localStorage.getItem('nexus_crm_route_templates') || '[]');
+    
+    const dbFormatRoutes = [];
+    
+    // Rutas por día
+    Object.keys(savedDays).forEach(day => {
+      dbFormatRoutes.push({
+        id: `day-${day.toLowerCase()}`,
+        name: day,
+        type: 'day',
+        items: savedDays[day] || []
+      });
+    });
+    
+    // Plantillas
+    savedTemplates.forEach(tpl => {
+      dbFormatRoutes.push({
+        id: tpl.id,
+        name: tpl.name,
+        type: 'template',
+        items: tpl.items || []
+      });
+    });
+    
+    return dbFormatRoutes;
+  },
+
+  async saveRoute(route) {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('crm_routes')
+          .upsert({
+            id: route.id,
+            name: route.name,
+            type: route.type,
+            items: route.items,
+            updated_at: new Date().toISOString()
+          })
+          .select();
+        if (!error) return data[0];
+        console.warn('Fallback a localStorage al guardar ruta por error:', error);
+      } catch (err) {
+        console.warn('Fallback a localStorage al guardar ruta por excepción:', err);
+      }
+    }
+
+    // Guardar localmente
+    if (route.type === 'day') {
+      const savedDays = JSON.parse(localStorage.getItem('nexus_crm_routes_by_day') || '{}');
+      savedDays[route.name] = route.items;
+      localStorage.setItem('nexus_crm_routes_by_day', JSON.stringify(savedDays));
+    } else {
+      const savedTemplates = JSON.parse(localStorage.getItem('nexus_crm_route_templates') || '[]');
+      const idx = savedTemplates.findIndex(t => t.id === route.id);
+      if (idx !== -1) {
+        savedTemplates[idx] = {
+          id: route.id,
+          name: route.name,
+          items: route.items,
+          created_at: new Date().toISOString()
+        };
+      } else {
+        savedTemplates.push({
+          id: route.id,
+          name: route.name,
+          items: route.items,
+          created_at: new Date().toISOString()
+        });
+      }
+      localStorage.setItem('nexus_crm_route_templates', JSON.stringify(savedTemplates));
+    }
+    return route;
+  },
+
+  async deleteRoute(id, type, name) {
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('crm_routes')
+          .delete()
+          .eq('id', id);
+        if (!error) return true;
+        console.warn('Fallback a localStorage al borrar ruta por error:', error);
+      } catch (err) {
+        console.warn('Fallback a localStorage al borrar ruta por excepción:', err);
+      }
+    }
+
+    // Borrado local
+    if (type === 'day') {
+      const savedDays = JSON.parse(localStorage.getItem('nexus_crm_routes_by_day') || '{}');
+      delete savedDays[name];
+      localStorage.setItem('nexus_crm_routes_by_day', JSON.stringify(savedDays));
+    } else {
+      const savedTemplates = JSON.parse(localStorage.getItem('nexus_crm_route_templates') || '[]');
+      const filtered = savedTemplates.filter(t => t.id !== id);
+      localStorage.setItem('nexus_crm_route_templates', JSON.stringify(filtered));
+    }
+    return true;
   }
 };

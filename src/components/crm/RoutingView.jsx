@@ -17,6 +17,7 @@ import {
   Locate
 } from 'lucide-react';
 import L from 'leaflet';
+import { dbService } from '../../services/dbService';
 
 // Coordenadas centrales por comuna en Santiago (Fallback)
 const COMMUNE_COORDS = {
@@ -253,30 +254,13 @@ export default function RoutingView({ leads, onDeleteLead }) {
     return days[currentDayIndex] || 'Lunes';
   });
 
-  const [routesByDay, setRoutesByDay] = useState(() => {
-    const saved = localStorage.getItem('nexus_crm_routes_by_day');
-    return saved ? JSON.parse(saved) : {
-      'Lunes': [], 'Martes': [], 'Miércoles': [], 'Jueves': [], 'Viernes': [], 'Sábado': [], 'Domingo': []
-    };
+  const [routesByDay, setRoutesByDay] = useState({
+    'Lunes': [], 'Martes': [], 'Miércoles': [], 'Jueves': [], 'Viernes': [], 'Sábado': [], 'Domingo': []
   });
 
-  const [routeItems, setRouteItems] = useState(() => {
-    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    const currentDayIndex = new Date().getDay();
-    const todayStr = days[currentDayIndex] || 'Lunes';
-    
-    const saved = localStorage.getItem('nexus_crm_routes_by_day');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed[todayStr] || [];
-    }
-    return [];
-  });
-
-  const [routeTemplates, setRouteTemplates] = useState(() => {
-    const saved = localStorage.getItem('nexus_crm_route_templates');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [routeItems, setRouteItems] = useState([]);
+  const [routeTemplates, setRouteTemplates] = useState([]);
+  const [loadingRoutes, setLoadingRoutes] = useState(true);
 
   const [newTemplateName, setNewTemplateName] = useState('');
   const [showTemplates, setShowTemplates] = useState(false);
@@ -286,30 +270,100 @@ export default function RoutingView({ leads, onDeleteLead }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [focusedLead, setFocusedLead] = useState(null);
 
+  // Cargar las rutas desde la base de datos al iniciar o refrescar
+  const loadAllRoutes = async (showNotification = false) => {
+    setLoadingRoutes(true);
+    try {
+      const dbRoutes = await dbService.getRoutes();
+      
+      const daysMap = {
+        'Lunes': [], 'Martes': [], 'Miércoles': [], 'Jueves': [], 'Viernes': [], 'Sábado': [], 'Domingo': []
+      };
+      const templates = [];
+
+      dbRoutes.forEach(route => {
+        if (route.type === 'day') {
+          daysMap[route.name] = route.items || [];
+        } else if (route.type === 'template') {
+          templates.push({
+            id: route.id,
+            name: route.name,
+            items: route.items || [],
+            created_at: route.created_at || new Date().toISOString()
+          });
+        }
+      });
+
+      setRoutesByDay(daysMap);
+      setRouteTemplates(templates);
+      
+      // Cargar el día seleccionado actual
+      setRouteItems(daysMap[selectedDay] || []);
+      if (showNotification) {
+        alert('🔄 Rutas sincronizadas con la base de datos de producción.');
+      }
+    } catch (err) {
+      console.error('Error al cargar rutas desde la DB:', err);
+    } finally {
+      setLoadingRoutes(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAllRoutes();
+  }, []);
+
   // Cambiar de día guardando la ruta actual
-  const handleDayChange = (newDay) => {
+  const handleDayChange = async (newDay) => {
+    const currentRouteObj = {
+      id: `day-${selectedDay.toLowerCase()}`,
+      name: selectedDay,
+      type: 'day',
+      items: routeItems
+    };
+    
+    // Guardado optimista local
     const updatedRoutes = {
       ...routesByDay,
       [selectedDay]: routeItems
     };
     setRoutesByDay(updatedRoutes);
-    localStorage.setItem('nexus_crm_routes_by_day', JSON.stringify(updatedRoutes));
     setSelectedDay(newDay);
     setRouteItems(updatedRoutes[newDay] || []);
+
+    try {
+      await dbService.saveRoute(currentRouteObj);
+    } catch (err) {
+      console.error('Error al guardar ruta al cambiar de día:', err);
+    }
   };
 
   // Efecto para autoguardar routeItems en el día seleccionado
   useEffect(() => {
-    if (selectedDay) {
-      setRoutesByDay(prev => {
-        const updated = { ...prev, [selectedDay]: routeItems };
-        localStorage.setItem('nexus_crm_routes_by_day', JSON.stringify(updated));
-        return updated;
-      });
-    }
-  }, [routeItems, selectedDay]);
+    if (!loadingRoutes && selectedDay) {
+      const saveRouteAsync = async () => {
+        try {
+          await dbService.saveRoute({
+            id: `day-${selectedDay.toLowerCase()}`,
+            name: selectedDay,
+            type: 'day',
+            items: routeItems
+          });
+        } catch (err) {
+          console.error('Error al autoguardar ruta en DB:', err);
+        }
+      };
 
-  const saveAsTemplate = () => {
+      setRoutesByDay(prev => ({
+        ...prev,
+        [selectedDay]: routeItems
+      }));
+
+      saveRouteAsync();
+    }
+  }, [routeItems, selectedDay, loadingRoutes]);
+
+  const saveAsTemplate = async () => {
     if (!newTemplateName.trim()) return;
     if (routeItems.length === 0) {
       alert('No puedes guardar una ruta vacía como plantilla.');
@@ -319,15 +373,28 @@ export default function RoutingView({ leads, onDeleteLead }) {
     const newTemplate = {
       id: crypto.randomUUID(),
       name: newTemplateName.trim(),
-      items: routeItems,
-      created_at: new Date().toISOString()
+      type: 'template',
+      items: routeItems
     };
 
-    const updated = [newTemplate, ...routeTemplates];
-    setRouteTemplates(updated);
-    localStorage.setItem('nexus_crm_route_templates', JSON.stringify(updated));
+    setRouteTemplates(prev => [
+      {
+        id: newTemplate.id,
+        name: newTemplate.name,
+        items: newTemplate.items,
+        created_at: new Date().toISOString()
+      },
+      ...prev
+    ]);
     setNewTemplateName('');
-    alert(`Plantilla "${newTemplate.name}" guardada con éxito.`);
+    setShowTemplates(false);
+
+    try {
+      await dbService.saveRoute(newTemplate);
+      alert(`Plantilla "${newTemplate.name}" guardada con éxito.`);
+    } catch (err) {
+      console.error('Error al guardar plantilla en DB:', err);
+    }
   };
 
   const loadTemplate = (template) => {
@@ -337,11 +404,14 @@ export default function RoutingView({ leads, onDeleteLead }) {
     }
   };
 
-  const deleteTemplate = (id, name) => {
+  const deleteTemplate = async (id, name) => {
     if (confirm(`¿Deseas eliminar la plantilla "${name}"?`)) {
-      const updated = routeTemplates.filter(t => t.id !== id);
-      setRouteTemplates(updated);
-      localStorage.setItem('nexus_crm_route_templates', JSON.stringify(updated));
+      setRouteTemplates(prev => prev.filter(t => t.id !== id));
+      try {
+        await dbService.deleteRoute(id, 'template', name);
+      } catch (err) {
+        console.error('Error al eliminar plantilla de la DB:', err);
+      }
     }
   };
 
@@ -832,6 +902,14 @@ export default function RoutingView({ leads, onDeleteLead }) {
               <Navigation size={13} className="animate-pulse" /> Mi Itinerario
             </h4>
             <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => loadAllRoutes(true)}
+                disabled={loadingRoutes}
+                className="p-1 hover:bg-white/20 text-white rounded transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center"
+                title="Sincronizar Rutas con la BD"
+              >
+                <RefreshCw size={12} className={loadingRoutes ? "animate-spin" : ""} />
+              </button>
               <button
                 onClick={() => setShowTemplates(!showTemplates)}
                 className="text-[9px] font-black uppercase tracking-wider bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded transition-all cursor-pointer"

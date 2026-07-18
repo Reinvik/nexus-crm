@@ -7,7 +7,9 @@ export let supabase = null;
 
 if (supabaseUrl && supabaseAnonKey) {
   try {
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      db: { schema: 'crm' }
+    });
     console.log('🔌 Supabase Client inicializado en el ecosistema.');
   } catch (err) {
     console.error('❌ Error al crear cliente Supabase:', err);
