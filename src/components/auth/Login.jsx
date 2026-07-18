@@ -211,12 +211,6 @@ export default function Login() {
                 </>
               )}
             </button>
-
-            {/* Nota de credenciales locales */}
-            <p className="text-[11px] text-slate-500 text-center font-medium pt-4 leading-relaxed">
-              * Para demostración local usa el correo de administrador:<br />
-              <span className="text-[#00d2ff] font-bold select-all">contacto@smartlean.cl</span> con clave <span className="text-[#00d2ff] font-bold select-all">nexus123</span>.
-            </p>
           </form>
 
         </div>
