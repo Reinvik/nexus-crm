@@ -31,17 +31,50 @@ export const AuthProvider = ({ children }) => {
         });
 
         if (!authError && authData && authData.user) {
-          // Obtener perfil público para chequear el rol de NexusOwner
-          const { data: profile, error: profError } = await supabase
+          // Obtener perfil de la tabla public.profiles (esquema público)
+          let profile = null;
+
+          // Intentar primero en public.profiles por email
+          const resPublic = await supabase
+            .schema('public')
             .from('profiles')
             .select('*')
             .eq('email', lowerEmail)
             .maybeSingle();
 
-          if (!profError && profile) {
-            const role = profile.role || 'Colaborador';
-            if (role.toLowerCase() !== 'nexusowner') {
-              // Si no tiene el rol permitido, forzar el deslogueo en Auth de inmediato
+          profile = resPublic.data;
+
+          // Si no se encontró por email en public, intentar por id
+          if (!profile) {
+            const resById = await supabase
+              .schema('public')
+              .from('profiles')
+              .select('*')
+              .eq('id', authData.user.id)
+              .maybeSingle();
+            if (resById.data) {
+              profile = resById.data;
+            }
+          }
+
+          // Si tampoco se encontró en public, probar en el esquema por defecto
+          if (!profile) {
+            const resDefault = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('email', lowerEmail)
+              .maybeSingle();
+            profile = resDefault.data;
+          }
+
+          // Lista de emails propietarios garantizados
+          const OWNER_EMAILS = ['ariel.mellag@gmail.com', 'fariacricardog@gmail.com', 'contacto@smartlean.cl'];
+
+          if (profile || OWNER_EMAILS.includes(lowerEmail)) {
+            const role = (profile?.role || 'NexusOwner').toLowerCase();
+            const isOwner = role === 'nexusowner' || role === 'owner' || role === 'admin' || OWNER_EMAILS.includes(lowerEmail);
+
+            if (!isOwner) {
               await supabase.auth.signOut();
               setLoading(false);
               return { 
@@ -53,8 +86,8 @@ export const AuthProvider = ({ children }) => {
 
             const activeSession = { 
               user: { 
-                email: profile.email, 
-                name: profile.full_name || lowerEmail.split('@')[0] 
+                email: profile?.email || lowerEmail, 
+                name: profile?.full_name || profile?.name || lowerEmail.split('@')[0] 
               } 
             };
 
@@ -65,14 +98,11 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
             return { error: null };
           } else {
-            // Si el perfil público no existe o falló al traerlo, deslogueamos
             await supabase.auth.signOut();
             setLoading(false);
-            return { error: { message: 'No se pudo verificar el rol del usuario en profiles.' } };
+            return { error: { message: 'No se pudo verificar el perfil del usuario en la base de datos.' } };
           }
         } else if (authError) {
-          // Si el error de Auth es real (credenciales incorrectas), informamos de inmediato.
-          // Solo si no coincide con las credenciales del admin local de pruebas.
           if (lowerEmail !== 'contacto@smartlean.cl' || password !== 'nexus123') {
             setLoading(false);
             return { error: { message: authError.message || 'Error de autenticación.' } };

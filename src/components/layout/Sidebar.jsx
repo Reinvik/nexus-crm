@@ -60,7 +60,7 @@ export default function Sidebar({ currentView, setCurrentView, isOpen, setIsOpen
           <div className="p-6 pb-4 flex items-center justify-between">
             <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setCurrentView('dashboard')}>
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center text-white shadow-[0_4px_14px_rgba(6,182,212,0.35)] transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105">
-                <Layers size={18} className="font-black" />
+                <TrendingUp size={20} className="font-black animate-pulse" />
               </div>
               <div className="flex flex-col">
                 <h1 className="font-extrabold text-[19px] text-white tracking-tight leading-none drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">

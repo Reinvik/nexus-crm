@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, Lock, ArrowRight, Loader2, Layers, Zap, Target, Sparkles } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, TrendingUp, Zap, Target, Sparkles } from 'lucide-react';
 
 const CRM_QUOTES = [
   { text: "Un taller mecánico sin sitio web es un cliente esperando por Nexus Garage.", author: "Estrategia de Prospección" },
   { text: "El CRM no es para vigilar al vendedor, es para sistematizar y liberar su tiempo.", author: "Metodología Lean" },
   { text: "En la venta de SaaS B2B, el seguimiento oportuno cierra más tratos que un gran discurso.", author: "Nexus Garage Sales" },
-  { text: "Nexus Hunter automatiza la búsqueda para que tú te enfocores en la conversión.", author: "SmartLean Tech" }
+  { text: "Nexus Hunter automatiza la búsqueda para que tú te enfoques en la conversión.", author: "SmartLean Tech" }
 ];
 
 export default function Login() {
@@ -58,7 +58,7 @@ export default function Login() {
         <div className="relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center text-white shadow-[0_4px_14px_rgba(6,182,212,0.35)]">
-              <Layers size={20} className="font-black" />
+              <TrendingUp size={20} className="font-black animate-pulse" />
             </div>
             <div>
               <span className="text-xl font-extrabold tracking-tight text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
