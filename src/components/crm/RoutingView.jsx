@@ -726,6 +726,24 @@ export default function RoutingView({ leads, onDeleteLead }) {
     return base + coordsPath;
   };
 
+  // Generar enlace a Google Maps para un único punto
+  const getGoogleMapsSingleLink = (item) => {
+    const geo = geocodedLeads.find(l => l.id === item.id);
+    if (geo) {
+      return `https://www.google.com/maps/search/?api=1&query=${geo.lat},${geo.lon}`;
+    }
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ', ' + item.address)}`;
+  };
+
+  // Generar enlace a Waze para un único punto
+  const getWazeSingleLink = (item) => {
+    const geo = geocodedLeads.find(l => l.id === item.id);
+    if (geo) {
+      return `https://waze.com/ul?ll=${geo.lat},${geo.lon}&navigate=yes`;
+    }
+    return `https://waze.com/ul?q=${encodeURIComponent(item.name + ' ' + item.address)}`;
+  };
+
   return (
     <div className="space-y-4">
       {/* Barra de Filtros de Routing */}
@@ -1012,6 +1030,28 @@ export default function RoutingView({ leads, onDeleteLead }) {
                 <div className="flex-1 space-y-0.5 min-w-0 pr-6">
                   <h5 className="font-extrabold text-slate-800 text-[11px] tracking-tight leading-tight truncate">{item.name}</h5>
                   <p className="text-[9px] text-slate-400 truncate">{item.address}</p>
+                  
+                  {/* Navegación individual Punto a Punto (Waze y Google Maps) */}
+                  <div className="flex items-center gap-1.5 pt-1.5">
+                    <a
+                      href={getGoogleMapsSingleLink(item)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[8px] font-black uppercase tracking-wider text-slate-400 hover:text-cyan-600 flex items-center gap-0.5 transition-colors border border-slate-100 px-1.5 py-0.5 rounded hover:bg-slate-50 bg-white"
+                      title="Navegar con Google Maps"
+                    >
+                      <MapPin size={8} /> G. Maps
+                    </a>
+                    <a
+                      href={getWazeSingleLink(item)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[8px] font-black uppercase tracking-wider text-slate-400 hover:text-sky-500 flex items-center gap-0.5 transition-colors border border-slate-100 px-1.5 py-0.5 rounded hover:bg-slate-50 bg-white"
+                      title="Navegar con Waze"
+                    >
+                      🚗 Waze
+                    </a>
+                  </div>
                 </div>
 
                 {/* Controles de Ordenación y Remoción */}
