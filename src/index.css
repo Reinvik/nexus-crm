@@ -1,15 +1,23 @@
 @import "tailwindcss";
 
+:root {
+  --color-cyan: #06b6d4;
+  --color-emerald: #10b981;
+  --color-amber: #f59e0b;
+  --text-primary: #0f172a;
+  --bg-sidebar: #050811;
+  --font-title: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
 @layer base {
   body {
     margin: 0;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #f8fafc; /* Slate 50 */
-    color: #0f172a; /* Slate 900 */
+    background-color: #f8fafc;
+    color: #0f172a;
   }
 }
 
