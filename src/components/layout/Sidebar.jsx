@@ -15,7 +15,10 @@ import {
   RefreshCw,
   Camera,
   User,
-  Layers
+  Layers,
+  Building2,
+  Calendar,
+  DollarSign
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -24,6 +27,9 @@ export default function Sidebar({ currentView, setCurrentView, isOpen, setIsOpen
 
   const menuItems = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
+    { id: 'customers', name: 'Clientes & Planes', icon: Building2 },
+    { id: 'agenda', name: 'Agenda & Cobros', icon: Calendar },
+    { id: 'finance', name: 'Finanzas & Gastos', icon: DollarSign },
     { id: 'kanban', name: 'Embudo de Ventas', icon: KanbanSquare },
     { id: 'routing', name: 'Planificador de Ruta', icon: Navigation },
     { id: 'hunter', name: 'Nexus Hunter', icon: Map },

@@ -9,6 +9,9 @@ import BuyerPersonas from './components/crm/BuyerPersonas';
 import MentorshipPlaybook from './components/crm/MentorshipPlaybook';
 import SalesGuide from './components/crm/SalesGuide';
 import RoutingView from './components/crm/RoutingView';
+import CustomersView from './components/crm/CustomersView';
+import AgendaView from './components/crm/AgendaView';
+import FinanceView from './components/crm/FinanceView';
 import { dbService } from './services/dbService';
 import { Menu, Calendar } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
@@ -21,6 +24,9 @@ export default function App() {
   
   // Estado Leads
   const [leads, setLeads] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Estado Modal Lead
@@ -38,9 +44,9 @@ export default function App() {
     };
   }, []);
 
-  // Cargar Leads al inicio
+  // Cargar Datos al inicio
   useEffect(() => {
-    const fetchLeads = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
         // Cargar keys dinámicas desde localStorage si el usuario las reconfiguró en la UI
@@ -52,15 +58,23 @@ export default function App() {
         if (userSubUrl) import.meta.env.VITE_SUPABASE_URL = userSubUrl;
         if (userSubKey) import.meta.env.VITE_SUPABASE_ANON_KEY = userSubKey;
 
-        const data = await dbService.getLeads();
-        setLeads(data);
+        const [leadsData, customersData, eventsData, expensesData] = await Promise.all([
+          dbService.getLeads(),
+          dbService.getCustomers(),
+          dbService.getAgendaEvents(),
+          dbService.getExpenses()
+        ]);
+        setLeads(leadsData);
+        setCustomers(customersData);
+        setEvents(eventsData);
+        setExpenses(expensesData);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetchLeads();
+    fetchData();
   }, []);
 
   // Guardar o actualizar un lead
@@ -135,10 +149,94 @@ export default function App() {
     setIsModalOpen(true);
   };
 
+  // Handlers Clientes (NK-126 & NK-128)
+  const handleSaveCustomer = async (cust) => {
+    try {
+      const saved = await dbService.saveCustomer(cust);
+      setCustomers(prev => {
+        const idx = prev.findIndex(c => c.id === saved.id);
+        if (idx !== -1) {
+          const updated = [...prev];
+          updated[idx] = saved;
+          return updated;
+        }
+        return [saved, ...prev];
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteCustomer = async (id) => {
+    try {
+      await dbService.deleteCustomer(id);
+      setCustomers(prev => prev.filter(c => c.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Handlers Agenda (NK-125)
+  const handleSaveEvent = async (evt) => {
+    try {
+      const saved = await dbService.saveAgendaEvent(evt);
+      setEvents(prev => {
+        const idx = prev.findIndex(e => e.id === saved.id);
+        if (idx !== -1) {
+          const updated = [...prev];
+          updated[idx] = saved;
+          return updated;
+        }
+        return [...prev, saved];
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteEvent = async (id) => {
+    try {
+      await dbService.deleteAgendaEvent(id);
+      setEvents(prev => prev.filter(e => e.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Handlers Finanzas (NK-127)
+  const handleSaveExpense = async (exp) => {
+    try {
+      const saved = await dbService.saveExpense(exp);
+      setExpenses(prev => {
+        const idx = prev.findIndex(e => e.id === saved.id);
+        if (idx !== -1) {
+          const updated = [...prev];
+          updated[idx] = saved;
+          return updated;
+        }
+        return [saved, ...prev];
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteExpense = async (id) => {
+    try {
+      await dbService.deleteExpense(id);
+      setExpenses(prev => prev.filter(e => e.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Obtener títulos de vistas
   const getViewTitle = () => {
     switch (currentView) {
       case 'dashboard': return 'Resumen Comercial e Inteligencia de Ventas';
+      case 'customers': return 'Cartera de Clientes & Servicios Adicionales';
+      case 'agenda': return 'Agenda Comercial & Calendario de Cobros';
+      case 'finance': return 'Finanzas Operativas & Rentabilidad';
       case 'kanban': return 'Embudo de Ventas - Nexus Garage';
       case 'routing': return 'Planificador de Ruta y Cobertura de Ventas';
       case 'hunter': return 'Nexus Hunter - Prospección Google Maps';
@@ -194,12 +292,36 @@ export default function App() {
             {loading ? (
               <div className="h-64 flex flex-col items-center justify-center">
                 <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="font-semibold text-sm text-slate-400">Sincronizando Leads...</p>
+                <p className="font-semibold text-sm text-slate-400">Sincronizando Nexus CRM...</p>
               </div>
             ) : (
               <>
                 {currentView === 'dashboard' && (
                   <Dashboard leads={leads} onNavigate={setCurrentView} />
+                )}
+                {currentView === 'customers' && (
+                  <CustomersView 
+                    customers={customers} 
+                    onSaveCustomer={handleSaveCustomer} 
+                    onDeleteCustomer={handleDeleteCustomer} 
+                  />
+                )}
+                {currentView === 'agenda' && (
+                  <AgendaView 
+                    events={events} 
+                    customers={customers} 
+                    leads={leads} 
+                    onSaveEvent={handleSaveEvent} 
+                    onDeleteEvent={handleDeleteEvent} 
+                  />
+                )}
+                {currentView === 'finance' && (
+                  <FinanceView 
+                    expenses={expenses} 
+                    customers={customers} 
+                    onSaveExpense={handleSaveExpense} 
+                    onDeleteExpense={handleDeleteExpense} 
+                  />
                 )}
                 {currentView === 'kanban' && (
                   <KanbanBoard 

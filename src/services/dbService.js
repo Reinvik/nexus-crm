@@ -674,5 +674,454 @@ export const dbService = {
       localStorage.setItem('nexus_crm_route_templates', JSON.stringify(filtered));
     }
     return true;
+  },
+
+  // ==========================================
+  // MÓDULO DE CLIENTES & ADDONS (NK-126 & NK-128)
+  // ==========================================
+  async getCustomers() {
+    const DEFAULT_CUSTOMERS = [
+      {
+        id: "cust-1",
+        name: "Carlos Mora",
+        company: "Taller Mecánico San Cristóbal",
+        rut: "76.452.910-K",
+        phone: "+56987654001",
+        email: "carlos@tallersancristobal.cl",
+        address: "Av. Recoleta 1420",
+        commune: "Recoleta",
+        city: "Santiago",
+        status: "active",
+        plan: "basico",
+        plan_name: "Nexus Garage - Básico",
+        base_fee: 45000,
+        billing_day: 5,
+        payment_method: "transferencia",
+        additional_services: [
+          {
+            id: "addon-1",
+            name: "Manejo Web & Redes Sociales",
+            category: "marketing",
+            price: 35000,
+            recurrence: "mensual",
+            notes: "Gestión de perfil Google Business y publicaciones mensuales"
+          }
+        ],
+        notes: "Cliente pionero. Muy satisfecho con el módulo de órdenes de trabajo."
+      },
+      {
+        id: "cust-2",
+        name: "Roberto Guerrero",
+        company: "Lubricentro Guerrero",
+        rut: "77.104.882-3",
+        phone: "+56987654002",
+        email: "contacto@lubricentroguerrero.cl",
+        address: "Av. Grecia 3510",
+        commune: "Ñuñoa",
+        city: "Santiago",
+        status: "active",
+        plan: "pro",
+        plan_name: "Nexus Garage - Pro",
+        base_fee: 75000,
+        billing_day: 15,
+        payment_method: "transferencia",
+        additional_services: [
+          {
+            id: "addon-2",
+            name: "Campaña Meta Ads (Captación de Clientes)",
+            category: "publicidad",
+            price: 45000,
+            recurrence: "mensual",
+            notes: "Presupuesto de gestión para anuncios de cambio de aceite"
+          },
+          {
+            id: "addon-3",
+            name: "Integración WhatsApp Notificaciones",
+            category: "integracion",
+            price: 20000,
+            recurrence: "mensual",
+            notes: "Avisos automáticos de vehículo listo"
+          }
+        ],
+        notes: "Usa activamente el control de stock de lubricantes y filtros."
+      },
+      {
+        id: "cust-3",
+        name: "José Sepúlveda",
+        company: "Cheos Garage",
+        rut: "76.882.115-4",
+        phone: "+56987654003",
+        email: "cheos.garage@gmail.com",
+        address: "San Diego 1840",
+        commune: "Santiago (Centro)",
+        city: "Santiago",
+        status: "active",
+        plan: "basico",
+        plan_name: "Nexus Garage - Básico",
+        base_fee: 45000,
+        billing_day: 1,
+        payment_method: "transferencia",
+        additional_services: [],
+        notes: "Pagos siempre puntuales el día 1 de cada mes."
+      },
+      {
+        id: "cust-4",
+        name: "Juan Pablo Morales",
+        company: "Automotriz JMP",
+        rut: "76.993.412-8",
+        phone: "+56987654005",
+        email: "contacto@automotrizjmp.cl",
+        address: "Portugal 620",
+        commune: "Santiago (Centro)",
+        city: "Santiago",
+        status: "active",
+        plan: "custom",
+        plan_name: "Nexus Garage - Plan Personalizado",
+        base_fee: 110000,
+        billing_day: 20,
+        payment_method: "transferencia",
+        additional_services: [
+          {
+            id: "addon-4",
+            name: "Soporte Prioritario & Capacitación 1 a 1",
+            category: "soporte",
+            price: 30000,
+            recurrence: "mensual",
+            notes: "Llamada mensual de optimización de procesos"
+          }
+        ],
+        notes: "Taller grande con 4 mecánicos y área de pintura."
+      }
+    ];
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('crm_customers')
+          .select('*')
+          .order('name');
+        if (!error && data && data.length > 0) return data;
+      } catch (err) {
+        console.warn('Fallback a localStorage en getCustomers:', err);
+      }
+    }
+
+    const localData = localStorage.getItem('nexus_crm_customers');
+    if (!localData) {
+      localStorage.setItem('nexus_crm_customers', JSON.stringify(DEFAULT_CUSTOMERS));
+      return DEFAULT_CUSTOMERS;
+    }
+    return JSON.parse(localData);
+  },
+
+  async saveCustomer(customer) {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('crm_customers')
+          .upsert(customer)
+          .select();
+        if (!error && data && data.length > 0) return data[0];
+      } catch (err) {
+        console.warn('Fallback a localStorage en saveCustomer:', err);
+      }
+    }
+
+    const localCustomers = JSON.parse(localStorage.getItem('nexus_crm_customers') || '[]');
+    const idx = localCustomers.findIndex(c => c.id === customer.id);
+    if (idx !== -1) {
+      localCustomers[idx] = { ...customer, updated_at: new Date().toISOString() };
+    } else {
+      localCustomers.unshift({ ...customer, id: customer.id || `cust-${Date.now()}`, created_at: new Date().toISOString() });
+    }
+    localStorage.setItem('nexus_crm_customers', JSON.stringify(localCustomers));
+    return customer;
+  },
+
+  async deleteCustomer(id) {
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('crm_customers')
+          .delete()
+          .eq('id', id);
+        if (!error) return true;
+      } catch (err) {
+        console.warn('Fallback a localStorage en deleteCustomer:', err);
+      }
+    }
+
+    const localCustomers = JSON.parse(localStorage.getItem('nexus_crm_customers') || '[]');
+    const filtered = localCustomers.filter(c => c.id !== id);
+    localStorage.setItem('nexus_crm_customers', JSON.stringify(filtered));
+    return true;
+  },
+
+  // ==========================================
+  // MÓDULO DE AGENDAMIENTO & CITAS (NK-125)
+  // ==========================================
+  async getAgendaEvents() {
+    const today = new Date().toISOString().split('T')[0];
+    const DEFAULT_EVENTS = [
+      {
+        id: "evt-1",
+        title: "Demostración Sistema de Inventario & WhatsApp",
+        type: "demo",
+        date: today,
+        time: "10:00",
+        endTime: "11:30",
+        lead_or_customer_id: "lead-1",
+        contact_name: "Roberto Guerrero (Lubricentro Guerrero)",
+        phone: "+56987654001",
+        location: "Av. Grecia 3510, Ñuñoa",
+        status: "pendiente",
+        notes: "Mostrar catálogo de filtros y cómo enviar el comprobante por WhatsApp."
+      },
+      {
+        id: "evt-2",
+        title: "Seguimiento de Satisfacción & Nuevos Addons",
+        type: "seguimiento",
+        date: today,
+        time: "15:00",
+        endTime: "15:45",
+        lead_or_customer_id: "cust-1",
+        contact_name: "Carlos Mora (Taller San Cristóbal)",
+        phone: "+56987654001",
+        location: "Llamada Telefónica / Google Meet",
+        status: "pendiente",
+        notes: "Consultar si necesitan incorporar módulo de cotizaciones rápidas."
+      },
+      {
+        id: "evt-3",
+        title: "Visita en Terreno: Revisión de Flujo Mecánicos",
+        type: "visita",
+        date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+        time: "11:00",
+        endTime: "12:30",
+        lead_or_customer_id: "cust-4",
+        contact_name: "Juan Pablo Morales (Automotriz JMP)",
+        phone: "+56987654005",
+        location: "Portugal 620, Santiago Centro",
+        status: "pendiente",
+        notes: "Revisión presencial para coordinar nueva capacitación del equipo."
+      }
+    ];
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('crm_agenda_events')
+          .select('*')
+          .order('date', { ascending: true });
+        if (!error && data && data.length > 0) return data;
+      } catch (err) {
+        console.warn('Fallback a localStorage en getAgendaEvents:', err);
+      }
+    }
+
+    const localData = localStorage.getItem('nexus_crm_agenda_events');
+    if (!localData) {
+      localStorage.setItem('nexus_crm_agenda_events', JSON.stringify(DEFAULT_EVENTS));
+      return DEFAULT_EVENTS;
+    }
+    return JSON.parse(localData);
+  },
+
+  async saveAgendaEvent(event) {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('crm_agenda_events')
+          .upsert(event)
+          .select();
+        if (!error && data && data.length > 0) return data[0];
+      } catch (err) {
+        console.warn('Fallback a localStorage en saveAgendaEvent:', err);
+      }
+    }
+
+    const localEvents = JSON.parse(localStorage.getItem('nexus_crm_agenda_events') || '[]');
+    const idx = localEvents.findIndex(e => e.id === event.id);
+    if (idx !== -1) {
+      localEvents[idx] = { ...event, updated_at: new Date().toISOString() };
+    } else {
+      localEvents.unshift({ ...event, id: event.id || `evt-${Date.now()}`, created_at: new Date().toISOString() });
+    }
+    localStorage.setItem('nexus_crm_agenda_events', JSON.stringify(localEvents));
+    return event;
+  },
+
+  async deleteAgendaEvent(id) {
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('crm_agenda_events')
+          .delete()
+          .eq('id', id);
+        if (!error) return true;
+      } catch (err) {
+        console.warn('Fallback a localStorage en deleteAgendaEvent:', err);
+      }
+    }
+
+    const localEvents = JSON.parse(localStorage.getItem('nexus_crm_agenda_events') || '[]');
+    const filtered = localEvents.filter(e => e.id !== id);
+    localStorage.setItem('nexus_crm_agenda_events', JSON.stringify(filtered));
+    return true;
+  },
+
+  // ==========================================
+  // MÓDULO DE FINANZAS & GASTOS (NK-127)
+  // ==========================================
+  async getExpenses() {
+    const today = new Date().toISOString().split('T')[0];
+    const DEFAULT_EXPENSES = [
+      {
+        id: "exp-1",
+        title: "Supabase Database Pro Tier",
+        category: "servidores",
+        category_label: "Servidores & Infraestructura",
+        amount: 25000,
+        currency: "CLP",
+        date: today,
+        vendor: "Supabase Inc.",
+        payment_method: "tarjeta",
+        notes: "Base de datos cloud PostgreSQL para Nexus CRM y Nexus Garage."
+      },
+      {
+        id: "exp-2",
+        title: "OpenAI API Usage (GPT-4o & Embeddings)",
+        category: "ia_apis",
+        category_label: "APIs & Modelos de IA",
+        amount: 19500,
+        currency: "CLP",
+        date: today,
+        vendor: "OpenAI",
+        payment_method: "tarjeta",
+        notes: "Consumo de API para generación inteligente de pitch y resúmenes."
+      },
+      {
+        id: "exp-3",
+        title: "Google Gemini 2.5 Pro & Flash Tokens",
+        category: "ia_apis",
+        category_label: "APIs & Modelos de IA",
+        amount: 14000,
+        currency: "CLP",
+        date: today,
+        vendor: "Google Cloud Platform",
+        payment_method: "tarjeta",
+        notes: "Clasificación de prospectos y análisis contextual de talleres."
+      },
+      {
+        id: "exp-4",
+        title: "Vercel Pro Team Hosting",
+        category: "servidores",
+        category_label: "Servidores & Infraestructura",
+        amount: 20000,
+        currency: "CLP",
+        date: today,
+        vendor: "Vercel Inc.",
+        payment_method: "tarjeta",
+        notes: "Deploy y CDN para aplicaciones Next.js y React."
+      },
+      {
+        id: "exp-5",
+        title: "Meta Ads Campaña Captación Talleres Mecánicos",
+        category: "marketing",
+        category_label: "Publicidad & Marketing",
+        amount: 45000,
+        currency: "CLP",
+        date: today,
+        vendor: "Meta Platforms",
+        payment_method: "tarjeta",
+        notes: "Anuncios dirigidos a dueños de talleres en Santiago y Región Metropolitana."
+      },
+      {
+        id: "exp-6",
+        title: "Combustible Visitas en Terreno (Rutas Santiago)",
+        category: "traslados",
+        category_label: "Traslados & Visitas Terreno",
+        amount: 25000,
+        currency: "CLP",
+        date: today,
+        vendor: "Copec",
+        payment_method: "tarjeta",
+        notes: "Recorridos presenciales comunas Ñuñoa, Recoleta y Santiago Centro."
+      },
+      {
+        id: "exp-7",
+        title: "TAG & Peajes Autopistas Central y Vespucio",
+        category: "traslados",
+        category_label: "Traslados & Visitas Terreno",
+        amount: 9500,
+        currency: "CLP",
+        date: today,
+        vendor: "Autopista Central",
+        payment_method: "transferencia",
+        notes: "Pase diario y telepeajes de rutas comerciales de la semana."
+      }
+    ];
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('crm_expenses')
+          .select('*')
+          .order('date', { ascending: false });
+        if (!error && data && data.length > 0) return data;
+      } catch (err) {
+        console.warn('Fallback a localStorage en getExpenses:', err);
+      }
+    }
+
+    const localData = localStorage.getItem('nexus_crm_expenses');
+    if (!localData) {
+      localStorage.setItem('nexus_crm_expenses', JSON.stringify(DEFAULT_EXPENSES));
+      return DEFAULT_EXPENSES;
+    }
+    return JSON.parse(localData);
+  },
+
+  async saveExpense(expense) {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('crm_expenses')
+          .upsert(expense)
+          .select();
+        if (!error && data && data.length > 0) return data[0];
+      } catch (err) {
+        console.warn('Fallback a localStorage en saveExpense:', err);
+      }
+    }
+
+    const localExpenses = JSON.parse(localStorage.getItem('nexus_crm_expenses') || '[]');
+    const idx = localExpenses.findIndex(e => e.id === expense.id);
+    if (idx !== -1) {
+      localExpenses[idx] = { ...expense, updated_at: new Date().toISOString() };
+    } else {
+      localExpenses.unshift({ ...expense, id: expense.id || `exp-${Date.now()}`, created_at: new Date().toISOString() });
+    }
+    localStorage.setItem('nexus_crm_expenses', JSON.stringify(localExpenses));
+    return expense;
+  },
+
+  async deleteExpense(id) {
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('crm_expenses')
+          .delete()
+          .eq('id', id);
+        if (!error) return true;
+      } catch (err) {
+        console.warn('Fallback a localStorage en deleteExpense:', err);
+      }
+    }
+
+    const localExpenses = JSON.parse(localStorage.getItem('nexus_crm_expenses') || '[]');
+    const filtered = localExpenses.filter(e => e.id !== id);
+    localStorage.setItem('nexus_crm_expenses', JSON.stringify(filtered));
+    return true;
   }
 };
