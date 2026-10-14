@@ -811,31 +811,73 @@ export const dbService = {
       localStorage.setItem('nexus_crm_customers', JSON.stringify(DEFAULT_CUSTOMERS));
       return DEFAULT_CUSTOMERS;
     }
-    return JSON.parse(localData);
+    
+    // NK-139: Sanitizar registros previos en localStorage para evitar IDs vacíos que colisionen
+    let parsed = [];
+    try {
+      parsed = JSON.parse(localData);
+    } catch {
+      parsed = DEFAULT_CUSTOMERS;
+    }
+
+    let hasRepaired = false;
+    const sanitized = parsed.map((c, idx) => {
+      if (!c.id || String(c.id).trim() === '') {
+        hasRepaired = true;
+        return { ...c, id: `cust-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}` };
+      }
+      return c;
+    });
+
+    if (hasRepaired) {
+      localStorage.setItem('nexus_crm_customers', JSON.stringify(sanitized));
+    }
+
+    return sanitized;
   },
 
   async saveCustomer(customer) {
+    // NK-139: Asegurar ID único estricto siempre antes de guardar
+    const customerId = (customer.id && String(customer.id).trim() !== '')
+      ? String(customer.id).trim()
+      : `cust-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
+    const customerToSave = {
+      ...customer,
+      id: customerId,
+      updated_at: new Date().toISOString()
+    };
+
     if (supabase) {
       try {
         const { data, error } = await supabase
           .from('crm_customers')
-          .upsert(customer)
+          .upsert(customerToSave)
           .select();
         if (!error && data && data.length > 0) return data[0];
+        if (error) {
+          console.warn('Fallback a localStorage en saveCustomer (Supabase):', error.message);
+        }
       } catch (err) {
-        console.warn('Fallback a localStorage en saveCustomer:', err);
+        console.warn('Fallback a localStorage en saveCustomer por excepción:', err);
       }
     }
 
     const localCustomers = JSON.parse(localStorage.getItem('nexus_crm_customers') || '[]');
-    const idx = localCustomers.findIndex(c => c.id === customer.id);
+    const idx = localCustomers.findIndex(c => String(c.id) === String(customerToSave.id));
+    let finalCustomer;
     if (idx !== -1) {
-      localCustomers[idx] = { ...customer, updated_at: new Date().toISOString() };
+      finalCustomer = { ...localCustomers[idx], ...customerToSave };
+      localCustomers[idx] = finalCustomer;
     } else {
-      localCustomers.unshift({ ...customer, id: customer.id || `cust-${Date.now()}`, created_at: new Date().toISOString() });
+      finalCustomer = {
+        ...customerToSave,
+        created_at: customerToSave.created_at || new Date().toISOString()
+      };
+      localCustomers.unshift(finalCustomer);
     }
     localStorage.setItem('nexus_crm_customers', JSON.stringify(localCustomers));
-    return customer;
+    return finalCustomer;
   },
 
   async deleteCustomer(id) {
@@ -852,7 +894,7 @@ export const dbService = {
     }
 
     const localCustomers = JSON.parse(localStorage.getItem('nexus_crm_customers') || '[]');
-    const filtered = localCustomers.filter(c => c.id !== id);
+    const filtered = localCustomers.filter(c => String(c.id) !== String(id));
     localStorage.setItem('nexus_crm_customers', JSON.stringify(filtered));
     return true;
   },

@@ -171,7 +171,14 @@ export default function CustomerModal({ customer, isOpen, onClose, onSave, onDel
       alert('Por favor indica al menos el nombre de contacto y el nombre de la empresa / taller.');
       return;
     }
-    onSave(formData);
+    const customerId = (formData.id && String(formData.id).trim() !== '')
+      ? String(formData.id).trim()
+      : `cust-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
+    onSave({
+      ...formData,
+      id: customerId
+    });
   };
 
   return (

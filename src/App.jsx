@@ -149,12 +149,13 @@ export default function App() {
     setIsModalOpen(true);
   };
 
-  // Handlers Clientes (NK-126 & NK-128)
+  // Handlers Clientes (NK-126 & NK-128 & NK-139)
   const handleSaveCustomer = async (cust) => {
     try {
       const saved = await dbService.saveCustomer(cust);
+      if (!saved || !saved.id) return;
       setCustomers(prev => {
-        const idx = prev.findIndex(c => c.id === saved.id);
+        const idx = prev.findIndex(c => String(c.id) === String(saved.id));
         if (idx !== -1) {
           const updated = [...prev];
           updated[idx] = saved;
@@ -163,16 +164,16 @@ export default function App() {
         return [saved, ...prev];
       });
     } catch (err) {
-      console.error(err);
+      console.error('Error al guardar cliente:', err);
     }
   };
 
   const handleDeleteCustomer = async (id) => {
     try {
       await dbService.deleteCustomer(id);
-      setCustomers(prev => prev.filter(c => c.id !== id));
+      setCustomers(prev => prev.filter(c => String(c.id) !== String(id)));
     } catch (err) {
-      console.error(err);
+      console.error('Error al eliminar cliente:', err);
     }
   };
 
