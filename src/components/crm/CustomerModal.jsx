@@ -32,7 +32,7 @@ const ADDON_PRESETS = [
   { name: 'Soporte Prioritario & Capacitación 1 a 1', category: 'soporte', price: 30000 },
 ];
 
-export default function CustomerModal({ customer, isOpen, onClose, onSave, onDelete }) {
+export default function CustomerModal({ customer, isOpen, onClose, onSave, onDelete, onScheduleMeeting }) {
   const [formData, setFormData] = useState({
     id: '',
     name: '',
@@ -531,21 +531,38 @@ export default function CustomerModal({ customer, isOpen, onClose, onSave, onDel
           </div>
 
           {/* Botones de acción */}
-          <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
-            {formData.id && onDelete ? (
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirm(`¿Estás seguro de eliminar al cliente ${formData.company}?`)) {
-                    onDelete(formData.id);
-                  }
-                }}
-                className="px-3.5 py-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Trash2 size={14} />
-                Eliminar Cliente
-              </button>
-            ) : <div />}
+          <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {formData.id && onDelete && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`¿Estás seguro de eliminar al cliente ${formData.company}?`)) {
+                      onDelete(formData.id);
+                    }
+                  }}
+                  className="px-3.5 py-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Trash2 size={14} />
+                  Eliminar Cliente
+                </button>
+              )}
+
+              {formData.id && onScheduleMeeting && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onScheduleMeeting(customer || formData);
+                    onClose();
+                  }}
+                  className="px-3.5 py-2 text-xs font-bold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Configurar reunión programada en la agenda"
+                >
+                  <Calendar size={14} className="text-cyan-600" />
+                  Agendar Reunión
+                </button>
+              )}
+            </div>
 
             <div className="flex items-center gap-2.5">
               <button

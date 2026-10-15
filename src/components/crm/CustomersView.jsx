@@ -27,7 +27,8 @@ import CustomerModal from './CustomerModal';
 export default function CustomersView({ 
   customers = [], 
   onSaveCustomer, 
-  onDeleteCustomer 
+  onDeleteCustomer,
+  onScheduleMeeting
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -393,6 +394,15 @@ export default function CustomersView({
                             <Phone size={15} />
                           </button>
 
+                          {/* Botón Agendar Reunión / Visita (NK-125) */}
+                          <button
+                            onClick={() => onScheduleMeeting && onScheduleMeeting(customer)}
+                            className="p-1.5 text-blue-600 hover:text-white hover:bg-blue-600 rounded-lg border border-blue-200 hover:border-blue-600 transition-colors cursor-pointer"
+                            title="Agendar Reunión o Visita Programada"
+                          >
+                            <Calendar size={15} />
+                          </button>
+
                           {/* Botón Editar Ficha */}
                           <button
                             onClick={() => {
@@ -449,6 +459,7 @@ export default function CustomersView({
             setIsModalOpen(false);
             setSelectedCustomer(null);
           }}
+          onScheduleMeeting={onScheduleMeeting}
         />
       )}
 

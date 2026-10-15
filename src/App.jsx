@@ -32,6 +32,7 @@ export default function App() {
   // Estado Modal Lead
   const [selectedLead, setSelectedLead] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [schedulingCustomer, setSchedulingCustomer] = useState(null);
 
   // Cargar Google Font Outfit
   useEffect(() => {
@@ -305,6 +306,10 @@ export default function App() {
                     customers={customers} 
                     onSaveCustomer={handleSaveCustomer} 
                     onDeleteCustomer={handleDeleteCustomer} 
+                    onScheduleMeeting={(customer) => {
+                      setSchedulingCustomer(customer);
+                      setCurrentView('agenda');
+                    }}
                   />
                 )}
                 {currentView === 'agenda' && (
@@ -314,6 +319,8 @@ export default function App() {
                     leads={leads} 
                     onSaveEvent={handleSaveEvent} 
                     onDeleteEvent={handleDeleteEvent} 
+                    initialCustomer={schedulingCustomer}
+                    onClearInitialCustomer={() => setSchedulingCustomer(null)}
                   />
                 )}
                 {currentView === 'finance' && (

@@ -48,19 +48,36 @@ export default function EventModal({
 
   useEffect(() => {
     if (event) {
-      setFormData({
-        id: event.id || '',
-        title: event.title || '',
-        type: event.type || 'demo',
-        date: event.date || new Date().toISOString().split('T')[0],
-        time: event.time || '10:00',
-        endTime: event.endTime || '11:00',
-        contact_name: event.contact_name || '',
-        phone: event.phone || '',
-        location: event.location || '',
-        status: event.status || 'pendiente',
-        notes: event.notes || '',
-      });
+      const cust = event.customer || event.prefillCustomer;
+      if (cust) {
+        setFormData({
+          id: event.id || '',
+          title: event.title || `Reunión Programada - ${cust.company || cust.name}`,
+          type: event.type || 'reunion',
+          date: event.date || new Date().toISOString().split('T')[0],
+          time: event.time || '10:00',
+          endTime: event.endTime || '11:00',
+          contact_name: event.contact_name || `${cust.name} (${cust.company})`,
+          phone: event.phone || cust.phone || '',
+          location: event.location || (cust.address ? `${cust.address}${cust.commune ? `, ${cust.commune}` : ''}` : ''),
+          status: event.status || 'pendiente',
+          notes: event.notes || `Reunión con cliente activo: ${cust.company} (${cust.plan_name || 'Nexus Garage'})`,
+        });
+      } else {
+        setFormData({
+          id: event.id || '',
+          title: event.title || '',
+          type: event.type || 'demo',
+          date: event.date || new Date().toISOString().split('T')[0],
+          time: event.time || '10:00',
+          endTime: event.endTime || '11:00',
+          contact_name: event.contact_name || '',
+          phone: event.phone || '',
+          location: event.location || '',
+          status: event.status || 'pendiente',
+          notes: event.notes || '',
+        });
+      }
     } else {
       setFormData({
         id: '',
